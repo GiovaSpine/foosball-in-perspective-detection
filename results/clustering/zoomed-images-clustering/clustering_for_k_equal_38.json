@@ -1,8 +1,8 @@
 {
     "k": 38,
-    "inertia_score": -176913.78125,
+    "inertia_score": -176913.796875,
     "silhouette_score": 0.17199675738811493,
-    "clusters_counts": [
+    "cluster_counts": [
         104,
         25,
         34,

@@ -2,7 +2,7 @@
     "k": 24,
     "inertia_score": -206599.8125,
     "silhouette_score": 0.1250866949558258,
-    "clusters_counts": [
+    "cluster_counts": [
         57,
         75,
         101,

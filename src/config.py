@@ -20,7 +20,18 @@ N_SAMPLES_FOR_MAX_N_CLUSTERS = 8  # the number of samples images for every clust
 
 def get_number_of_samples(n_clusters: int) -> int:
     '''
+    Calculate the number of samples to collect for a given n_clusters.
+
+    Parameters:
+    n_clusters (int): The n_clusters for which the function will calculate the number of samples
+
+    Returns:
+    int: The number of samples to collect for the given n_clusters
     '''
+    # Calculate the number of samples using the function f(x) = m * x + q
+    # where f(x) is the number of samples and x is n_clusters
+    # we know that f(MIN_N_CLUSTERS) = N_SAMPLES_FOR_MIN_N_CLUSTERS and f(MAX_N_CLUSTERS) = N_SAMPLES_FOR_MAX_N_CLUSTERS
+    # so we have to solve the following linear system:
     # { N_SAMPLES_FOR_MIN_N_CLUSTERS = m * MIN_N_CLUSTERS + q
     # { N_SAMPLES_FOR_MAX_N_CLUSTERS = m * MAX_N_CLUSTERS + q
 

@@ -61,9 +61,10 @@ def clustering(features_path, clustering_path):
         print("- Labels:", kmeans.labels_)
 
         # save the number of elements for every cluster
-        clusters_counts = [int(np.sum(kmeans.labels_ == cluster_id)) for cluster_id in range(k)]
+        cluster_counts = [int(np.sum(kmeans.labels_ == cluster_id)) for cluster_id in range(k)]
 
         # collect some samples for every clusters that are evenly distributed in the cluster
+        # we collect n_samples points that are further and further away from the centroid
         samples = []
         n_samples = get_number_of_samples(k)
 
@@ -87,7 +88,7 @@ def clustering(features_path, clustering_path):
             "k": k,
             "inertia_score": float(kmeans.score(X)),
             "silhouette_score": float(silhouette_score(X, kmeans.labels_)),
-            "clusters_counts": clusters_counts,
+            "cluster_counts": cluster_counts,
             "samples": samples
         }
         filename = f"{CLUSTERING_FILENAME}{k}.json"
