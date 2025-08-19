@@ -20,8 +20,8 @@ vit_model.to(device)
 # feature extraction
 def extract_features(images_path: str, features_path: str) -> None:
     '''
-    Extract the features from all the images using a pretrained ViT model, and save those features
-    in a specifed path
+    Extract the features from images using a pretrained ViT model, and save those features
+    in a specifed path as pt files
 
     Parameters:
     images_path (str): The path of the images from which the features will be extracted
@@ -39,6 +39,9 @@ def extract_features(images_path: str, features_path: str) -> None:
         raise ValueError(error_message)
     
     for img_name in os.listdir(images_path):
+        if not any(img_name.lower().endswith(ext) for ext in IMAGES_EXTENSIONS):
+            continue  # ignore other types of files
+
         img_path = os.path.join(images_path, img_name)
         
         img_tensor = process_image_for_ViT(img_path).to(device)  # move tensor to GPU
@@ -48,7 +51,7 @@ def extract_features(images_path: str, features_path: str) -> None:
 
         feature_path = os.path.join(features_path, os.path.splitext(img_name)[0] + ".pt")
         torch.save(features.cpu(), feature_path)  # save to CPU
-        print(f"Feature saved for {img_name}")
+        print(f"Features saved: {feature_path}")
 
     print(f"Done extracting features for {images_path}")
 

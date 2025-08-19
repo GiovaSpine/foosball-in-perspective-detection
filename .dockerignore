@@ -1,4 +1,3 @@
 .venv/
-data/all-data/
 src/__pycache__/
 src/test.py
