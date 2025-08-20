@@ -56,5 +56,4 @@ def extract_features(images_path: str, features_path: str) -> None:
     print(f"Done extracting features for {images_path}")
 
 
-extract_features(IMAGES_DIRECTORY, IMAGES_FEATURES_DIRECTORY)
-extract_features(ZOOMED_IMAGES_DIRECTORY, ZOOMED_IMAGES_FEATURES_DIRECTORY)
+extract_features(IMAGES_DIRECTORY, FEATURES_DIRECTORY)

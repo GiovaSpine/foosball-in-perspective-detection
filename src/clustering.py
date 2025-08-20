@@ -4,7 +4,76 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 import json
+import random
 from config import *
+
+
+
+def collect_samples(k: int, kmeans: KMeans, X: np.ndarray, image_names: list) -> list:
+    '''
+    '''
+    if not all(isinstance(x, str) for x in image_names):
+        raise ValueError("image_names has to be a list of names")
+    
+    if k != kmeans.cluster_centers_.shape[0]:
+        raise ValueError(f"k it's not equal to n_clusters of kmeans = {kmeans.cluster_centers_.shape[0]}")
+    
+    if X.ndim != 2:
+        raise ValueError("X has to be a bidimensional array")
+    
+    if X.shape[1] != kmeans.cluster_centers_.shape[1]:
+        raise ValueError("X and kmeans have a different n_features")
+    
+    samples = []
+    n_samples = get_number_of_samples(k)
+
+    for cluster_id in range(k):
+        cluster_points = X[kmeans.labels_ == cluster_id]
+        centroid = kmeans.cluster_centers_[cluster_id]
+        
+        # distances of all points in cluster from centroid
+        distances = np.linalg.norm(centroid - cluster_points, axis=1)
+        sorted_indexes = np.argsort(distances)  # points closest to centroid first
+        
+        # decide how many samples to take by each method
+        n_centroid = n_samples // 2
+        n_random = n_samples - n_centroid
+        
+        original_indexes = np.where(kmeans.labels_ == cluster_id)[0]
+        
+        # select by centroid proximity
+        step = max(len(sorted_indexes) // max(n_centroid, 1), 1)
+        centroid_selected = []
+        for i in range(min(n_centroid, len(cluster_points))):
+            centroid_selected.append(sorted_indexes[i * step])
+        
+        # select randomly from the remaining points
+        remaining_indexes = list(set(range(len(cluster_points))) - set(centroid_selected))
+        if remaining_indexes:  # only if there are leftover points
+            random_selected = np.random.choice(
+                remaining_indexes,
+                size=min(n_random, len(remaining_indexes)),
+                replace=False
+            )
+        else:
+            random_selected = []
+        
+        # merge both selections, map to original indexes
+        selected_indexes = np.array(centroid_selected + list(random_selected))
+        selected_original_indexes = original_indexes[selected_indexes]
+        
+        # convert indexes to image names
+        samples_for_cluster = [image_names[i] for i in selected_original_indexes]
+        samples.append(samples_for_cluster)
+
+    return samples
+
+
+def save_labels():
+    '''
+    save the labels for each image
+    '''
+    pass
 
 
 def clustering(features_path, clustering_path):
@@ -63,25 +132,8 @@ def clustering(features_path, clustering_path):
         # save the number of elements for every cluster
         cluster_counts = [int(np.sum(kmeans.labels_ == cluster_id)) for cluster_id in range(k)]
 
-        # collect some samples for every clusters that are evenly distributed in the cluster
-        # we collect n_samples points that are further and further away from the centroid
-        samples = []
-        n_samples = get_number_of_samples(k)
-
-        for cluster_id in range(k):
-            cluster_points = X[kmeans.labels_ == cluster_id]
-            centroid = kmeans.cluster_centers_[cluster_id]
-            distances = np.linalg.norm(centroid - cluster_points, axis=1)
-            sorted_indexes = np.argsort(distances)
-            selected_indexes = []
-            step = max(len(sorted_indexes) // n_samples, 1)
-            for i in range(min(n_samples, len(cluster_points))):
-                selected_indexes.append(sorted_indexes[i*step])
-            
-            original_indexes = np.where(kmeans.labels_ == cluster_id)[0]
-            selected_original_indexes = original_indexes[selected_indexes]
-            samples_for_cluster = [image_names[i] for i in selected_original_indexes]
-            samples.append(samples_for_cluster)
+        # collect some samples for every clusters
+        samples = collect_samples(k, kmeans, X, image_names)
 
         # save on file
         data_to_save = {
@@ -101,5 +153,4 @@ def clustering(features_path, clustering_path):
     print(f"Done clustering for {features_path}\n")
 
 
-clustering(IMAGES_FEATURES_DIRECTORY, IMAGES_CLUSTERING_DIRECTORY)
-clustering(ZOOMED_IMAGES_FEATURES_DIRECTORY, ZOOMED_IMAGES_CLUSTERING_DIRECTORY)
+clustering(FEATURES_DIRECTORY, CLUSTERING_DIRECTORY)
