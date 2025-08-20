@@ -115,6 +115,9 @@ def clustering(features_path, clustering_path):
 
     # X has to be (n_samples, n_features)
     X = np.vstack(features)
+    
+
+    all_labels = {image_name: [] for image_name in image_names}  # this dictionary will contain for each image's name (key) the label for each cluster
 
 
     # apply kmeans with many different k
@@ -128,6 +131,10 @@ def clustering(features_path, clustering_path):
         print("- Silhoutte Score:", silhouette_score(X, kmeans.labels_))
         print("- Centroids:", kmeans.cluster_centers_.shape)
         print("- Labels:", kmeans.labels_)
+
+        # save the labels
+        for image_name, label in zip(image_names, kmeans.labels_):
+            all_labels[image_name].append(int(label))
 
         # save the number of elements for every cluster
         cluster_counts = [int(np.sum(kmeans.labels_ == cluster_id)) for cluster_id in range(k)]
@@ -152,5 +159,10 @@ def clustering(features_path, clustering_path):
 
     print(f"Done clustering for {features_path}\n")
 
+    return all_labels
 
-clustering(FEATURES_DIRECTORY, CLUSTERING_DIRECTORY)
+
+all_labels = clustering(FEATURES_DIRECTORY, CLUSTERING_DIRECTORY)
+
+with open(os.path.join(CLUSTERING_DIRECTORY, ALL_CLUSTERING_LABELS_FILENAME), "w") as f:
+    json.dump(all_labels, f, indent=4)
