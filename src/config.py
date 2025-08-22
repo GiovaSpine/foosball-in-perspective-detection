@@ -1,42 +1,88 @@
 
 
-IMAGES_DIRECTORY = "data/images"
+# =========================================================
 
-IMAGES_EXTENSIONS = [".jpg", ".jpeg", ".png"]
+# DIRECTORIES
+
+IMAGES_DATA_DIRECTORY = "data/images"
 
 FEATURES_DIRECTORY = "data/features"
 
 CLUSTERING_DIRECTORY = "results/clustering"
 
+CLUSTER_COUNTS_IMAGES_DIRECTORY = "results/images/cluster_counts_images"
+
 CLUSTER_IMAGES_DIRECTORY = "results/images/cluster_images"
 
-CLUSTERING_FILENAME = "clustering_for_k_equal_"
-ALL_CLUSTERING_LABELS_FILENAME = "all_clustering_labels.json"
-CLUSTER_IMAGE_FILENAME = "cluster_"
+# =========================================================
 
-MIN_N_CLUSTERS = 2
-MAX_N_CLUSTERS = 30
+# ALLOWED EXTENSIONS FOR IMAGES DATA
+
+IMAGES_DATA_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"]
+
+# =========================================================
+
+# FILENAMES
+
+ALL_CLUSTERING_LABELS_FILENAME = "all_clustering_labels.json"
+
+def get_clustering_filename(k: int) -> str:
+    '''
+    Get the filename for the clustering results for a specific k.
+
+    Parameters:
+    k (int): The number of clusters
+
+    Returns:
+    str: The filename
+    '''
+    if k < MIN_N_CLUSTERS or k > MAX_N_CLUSTERS:
+        raise ValueError("k has to be in the interval [{MIN_N_CLUSTERS}, {MAX_N_CLUSTERS}]")
+    
+    return f"clustering_for_k_equal_{k}.json"
+
+def get_cluster_counts_image_filename(k: int) -> str:
+    '''
+    Get the filename for the clustering counts graph for a specific k.
+
+    Parameters:
+    k (int): The number of clusters
+
+    Returns:
+    str: The filename
+    '''
+    if k < MIN_N_CLUSTERS or k > MAX_N_CLUSTERS:
+        raise ValueError("k has to be in the interval [{MIN_N_CLUSTERS}, {MAX_N_CLUSTERS}]")
+    
+    return f"cluster_counts_image_k_{k}.png"
+
+def get_cluster_image_filename(k: int, cluster_id: int) -> str:
+    '''
+    Get the filename for the image of cluster, identified with k and cluster_id.
+
+    Parameters:
+    k (int): The number of clusters
+    cluster_id (int): The id of the cluster
+
+    Returns:
+    str: The filename
+    '''
+    if k < MIN_N_CLUSTERS or k > MAX_N_CLUSTERS:
+        raise ValueError("k has to be in the interval [{MIN_N_CLUSTERS}, {MAX_N_CLUSTERS}]")
+    
+    if cluster_id < 0 or cluster_id >= k:
+        raise ValueError(f"cluster_id has to be in the interval [0, {k - 1}]")
+    
+    return f"cluster_image_k_{k}_cluster_id_{cluster_id}.png"
+
+
+# =========================================================
+
+# CLUSTERING PARAMETERS
+
+MIN_N_CLUSTERS = 2  # the lowest number of clusters to apply KMeans
+MAX_N_CLUSTERS = 30  # the highest number of clusters to apply KMeans
 N_SAMPLES_FOR_MIN_N_CLUSTERS = 50  # the number of samples images for every cluster, to collect when n_clusters = MIN_N_CLUSTERS
 N_SAMPLES_FOR_MAX_N_CLUSTERS = 30  # the number of samples images for every cluster, to collect when n_clusters = MAX_N_CLUSTERS
 
-def get_number_of_samples(n_clusters: int) -> int:
-    '''
-    Calculate the number of samples to collect for a given n_clusters.
-
-    Parameters:
-    n_clusters (int): The n_clusters for which the function will calculate the number of samples
-
-    Returns:
-    int: The number of samples to collect for the given n_clusters
-    '''
-    # Calculate the number of samples using the function f(x) = m * x + q
-    # where f(x) is the number of samples and x is n_clusters
-    # we know that f(MIN_N_CLUSTERS) = N_SAMPLES_FOR_MIN_N_CLUSTERS and f(MAX_N_CLUSTERS) = N_SAMPLES_FOR_MAX_N_CLUSTERS
-    # so we have to solve the following linear system:
-    # { N_SAMPLES_FOR_MIN_N_CLUSTERS = m * MIN_N_CLUSTERS + q
-    # { N_SAMPLES_FOR_MAX_N_CLUSTERS = m * MAX_N_CLUSTERS + q
-
-    m = (N_SAMPLES_FOR_MAX_N_CLUSTERS - N_SAMPLES_FOR_MIN_N_CLUSTERS) / (MAX_N_CLUSTERS - MIN_N_CLUSTERS)
-    q = N_SAMPLES_FOR_MIN_N_CLUSTERS - (m * MIN_N_CLUSTERS)
-
-    return round((m * n_clusters) + q)
+# =========================================================

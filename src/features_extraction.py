@@ -31,15 +31,15 @@ def extract_features(images_path: str, features_path: str) -> None:
     None
     '''
     if not os.path.exists(images_path) or not os.path.exists(features_path):
-        error_message = ""
+        error_message = "\n"
         if not os.path.exists(images_path):
-            error_message += f"The following path doesn't exists: {images_path}\n"
+            error_message += f"images_path provided doesn't exists: {images_path}\n"
         if not os.path.exists(features_path):
-            error_message += f"The following path doesn't exists: {features_path}\n"    
+            error_message += f"features_path provided doesn't exists: {features_path}\n"    
         raise ValueError(error_message)
     
     for img_name in os.listdir(images_path):
-        if not any(img_name.lower().endswith(ext) for ext in IMAGES_EXTENSIONS):
+        if not any(img_name.lower().endswith(ext) for ext in IMAGES_DATA_EXTENSIONS):
             continue  # ignore other types of files
 
         img_path = os.path.join(images_path, img_name)
@@ -51,9 +51,9 @@ def extract_features(images_path: str, features_path: str) -> None:
 
         feature_path = os.path.join(features_path, os.path.splitext(img_name)[0] + ".pt")
         torch.save(features.cpu(), feature_path)  # save to CPU
-        print(f"Features saved: {feature_path}")
+        print(f"Feature saved: {feature_path}")
 
     print(f"Done extracting features for {images_path}")
 
 
-extract_features(IMAGES_DIRECTORY, FEATURES_DIRECTORY)
+extract_features(IMAGES_DATA_DIRECTORY, FEATURES_DIRECTORY)

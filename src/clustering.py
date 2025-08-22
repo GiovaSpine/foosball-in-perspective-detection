@@ -7,6 +7,27 @@ import json
 from config import *
 
 
+def get_number_of_samples(n_clusters: int) -> int:
+    '''
+    Calculate the number of samples to collect for a given n_clusters.
+
+    Parameters:
+    n_clusters (int): The n_clusters for which the function will calculate the number of samples
+
+    Returns:
+    int: The number of samples to collect for the given n_clusters
+    '''
+    # Calculate the number of samples using the function f(x) = m * x + q
+    # where f(x) is the number of samples and x is n_clusters
+    # we know that f(MIN_N_CLUSTERS) = N_SAMPLES_FOR_MIN_N_CLUSTERS and f(MAX_N_CLUSTERS) = N_SAMPLES_FOR_MAX_N_CLUSTERS
+    # so we have to solve the following linear system:
+    # { N_SAMPLES_FOR_MIN_N_CLUSTERS = m * MIN_N_CLUSTERS + q
+    # { N_SAMPLES_FOR_MAX_N_CLUSTERS = m * MAX_N_CLUSTERS + q
+
+    m = (N_SAMPLES_FOR_MAX_N_CLUSTERS - N_SAMPLES_FOR_MIN_N_CLUSTERS) / (MAX_N_CLUSTERS - MIN_N_CLUSTERS)
+    q = N_SAMPLES_FOR_MIN_N_CLUSTERS - (m * MIN_N_CLUSTERS)
+
+    return round((m * n_clusters) + q)
 
 def get_samples_and_centroids(k: int, kmeans: KMeans, X: np.ndarray, image_names: list, n_samples: int, collect_random=False) -> tuple:
     '''
@@ -180,7 +201,7 @@ def clustering(features_path: str, clustering_path: str) -> None:
             "centroids": centroids,
             "samples": samples
         }
-        filename = f"{CLUSTERING_FILENAME}{k}.json"
+        filename = get_clustering_filename(k)
         
         with open(os.path.join(clustering_path, filename), "w") as f:
             json.dump(data_to_save, f, indent=4)
