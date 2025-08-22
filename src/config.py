@@ -8,8 +8,11 @@ FEATURES_DIRECTORY = "data/features"
 
 CLUSTERING_DIRECTORY = "results/clustering"
 
+CLUSTER_IMAGES_DIRECTORY = "results/images/cluster_images"
+
 CLUSTERING_FILENAME = "clustering_for_k_equal_"
 ALL_CLUSTERING_LABELS_FILENAME = "all_clustering_labels.json"
+CLUSTER_IMAGE_FILENAME = "cluster_"
 
 MIN_N_CLUSTERS = 2
 MAX_N_CLUSTERS = 30
