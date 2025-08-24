@@ -15,7 +15,7 @@ data/images/*.BMP
 data/images/*.tiff
 data/images/*.TIFF
 
-results/images/cluster_images/*.png
+results/images/cluster-images/*.png
 
 data/labels/*.txt
 
