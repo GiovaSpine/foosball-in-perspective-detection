@@ -14,6 +14,8 @@ CLUSTER_COUNTS_IMAGES_DIRECTORY = "results/images/cluster_counts_images"
 
 CLUSTER_IMAGES_DIRECTORY = "results/images/cluster_images"
 
+ROOT_DIRECTORY_FROM_NOTEBOOKS = ".."
+
 # =========================================================
 
 # ALLOWED EXTENSIONS FOR IMAGES DATA
