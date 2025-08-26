@@ -10,9 +10,9 @@ FEATURES_DIRECTORY = "data/features"
 
 CLUSTERING_DIRECTORY = "results/clustering"
 
-CLUSTER_COUNTS_IMAGES_DIRECTORY = "results/images/cluster_counts_images"
+CLUSTER_COUNTS_IMAGES_DIRECTORY = "results/images/cluster-counts-images"
 
-CLUSTER_IMAGES_DIRECTORY = "results/images/cluster_images"
+CLUSTER_IMAGES_DIRECTORY = "results/images/cluster-images"
 
 ROOT_DIRECTORY_FROM_NOTEBOOKS = ".."
 
@@ -84,7 +84,7 @@ def get_cluster_image_filename(k: int, cluster_id: int) -> str:
 
 MIN_N_CLUSTERS = 2  # the lowest number of clusters to apply KMeans
 MAX_N_CLUSTERS = 30  # the highest number of clusters to apply KMeans
-N_SAMPLES_FOR_MIN_N_CLUSTERS = 50  # the number of samples images for every cluster, to collect when n_clusters = MIN_N_CLUSTERS
-N_SAMPLES_FOR_MAX_N_CLUSTERS = 30  # the number of samples images for every cluster, to collect when n_clusters = MAX_N_CLUSTERS
+N_SAMPLES_FOR_MIN_N_CLUSTERS = 30  # the number of samples images for every cluster, to collect when n_clusters = MIN_N_CLUSTERS
+N_SAMPLES_FOR_MAX_N_CLUSTERS = 15  # the number of samples images for every cluster, to collect when n_clusters = MAX_N_CLUSTERS
 
 # =========================================================

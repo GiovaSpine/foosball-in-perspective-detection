@@ -19,8 +19,6 @@ results/images/cluster-images/*.png
 
 data/labels/*.txt
 
-data/images_names.txt
-
 src/__pycache__/
 
 src/test.py
