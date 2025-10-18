@@ -29,6 +29,7 @@ def get_number_of_samples(n_clusters: int) -> int:
 
     return round((m * n_clusters) + q)
 
+
 def get_samples_and_centroids(k: int, kmeans: KMeans, X: np.ndarray, image_names: list, n_samples: int, collect_random=False) -> tuple:
     '''
     Get centroids and samples for every cluster for a specific k (n_clusters).
@@ -179,8 +180,6 @@ def clustering(features_path: str, clustering_path: str) -> None:
         print("For k =", k, "we have the following results:")
         print("- Inertia:", kmeans.inertia_)
         print("- Silhoutte Score:", silhouette_score(X, kmeans.labels_))
-        print("- Centroids:", kmeans.cluster_centers_.shape)
-        print("- Labels:", kmeans.labels_)
 
         # save the labels for this k (n_clusters)
         for image_name, label in zip(image_names, kmeans.labels_):
