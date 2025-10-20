@@ -8,6 +8,8 @@ IMAGES_DATA_DIRECTORY = "data/images"
 
 FEATURES_DIRECTORY = "data/features"
 
+LABELS_DIRECTORY = "data/labels"
+
 CLUSTERING_DIRECTORY = "results/clustering"
 
 CLUSTER_COUNTS_IMAGES_DIRECTORY = "results/images/cluster-counts-images"
@@ -18,9 +20,11 @@ ROOT_DIRECTORY_FROM_NOTEBOOKS = ".."
 
 # =========================================================
 
-# ALLOWED EXTENSIONS FOR IMAGES DATA
+# ALLOWED EXTENSIONS FOR IMAGES DATA AND LABELS
 
 IMAGES_DATA_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"]
+
+LABELS_EXTENSION = ".txt"
 
 # =========================================================
 
