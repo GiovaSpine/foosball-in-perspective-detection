@@ -1,22 +1,27 @@
-
+from pathlib import Path
 
 # =========================================================
 
 # DIRECTORIES
 
-IMAGES_DATA_DIRECTORY = "data/images"
+IMAGES_DATA_DIRECTORY = "data/images"  # directory of the data/images
 
-FEATURES_DIRECTORY = "data/features"
+FEATURES_DIRECTORY = "data/features"  # directory of the features obtained with a pretrained model on the data
 
-LABELS_DIRECTORY = "data/labels"
+LABELS_DIRECTORY = "data/labels"  # directory of the labels/annotations of the data
 
-CLUSTERING_DIRECTORY = "results/clustering"
+CLUSTERING_DIRECTORY = "results/clustering"  # directory where we will save the results of KMeans
 
-CLUSTER_COUNTS_IMAGES_DIRECTORY = "results/images/cluster-counts-images"
+CLUSTER_COUNTS_IMAGES_DIRECTORY = "results/images/cluster-counts-images"  # directory where we will save the images of cluster's counts
 
-CLUSTER_IMAGES_DIRECTORY = "results/images/cluster-images"
+CLUSTER_IMAGES_DIRECTORY = "results/images/cluster-images"  # directory where we will save the images of some samples of a cluster
 
-ROOT_DIRECTORY_FROM_NOTEBOOKS = ".."
+SRC_DIRECTORY = Path(__file__).resolve().parent  # absolute path of the src directory, knowing that this file is in the src folder
+PROJECT_DIRECTORY = SRC_DIRECTORY.parent  # absolute path of the project directory, knowing that src is in the project direcotry
+
+# we need absolute paths for the notebooks
+IMAGES_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/images_dataframe.parquet"  # directory where we will save the dataframe of the data/images
+LABELS_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/labels_dataframe.parquet"  # directory where we will save the dataframe of the labels/annotations
 
 # =========================================================
 
