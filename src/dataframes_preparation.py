@@ -76,13 +76,13 @@ def load_labes_dataframe():
             center = calculate_intersection((keypoints[0], keypoints[2]), (keypoints[1], keypoints[3]))
 
             # let's calculate the normalized direction of the foosball table
-            # for simplicity, we consider the first 2 keypoints of the upper rectangle as the reference for the direction
-
-            # we find the average point between keypoints[0] and keypoint[1]
-            average_point = [(keypoints[0][0] + keypoints[1][0]) / 2.0, (keypoints[0][1] + keypoints[1][1]) / 2.0]
-            
-            # the direction from center to average_point is average_point - center
-            direction = [average_point[0] - center[0], average_point[1] - center[1]]
+            # the direction goes from the center to the point in the middle between the first and the second keypoint
+            # WARNING: this middle point is NOT the average point, because of perspective
+            # the middle point is the intersection between the lines that connect the first to the second keypoints, and the center to the vanishing point
+            # the vanishing point is obtained by intersecting the lines that connect the first keypoint to the fourth, and the second to the third
+            vanishing_point = calculate_intersection((keypoints[0], keypoints[3]), (keypoints[1], keypoints[2]))
+            middle_point = calculate_intersection((keypoints[0], keypoints[1]), (center, vanishing_point))
+            direction = [middle_point[0] - center[0], middle_point[1] - center[1]]
             direction = direction / np.linalg.norm(direction)
             
             data.append({
