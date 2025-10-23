@@ -11,9 +11,9 @@ from config import *
 def load_labes_dataframe():
     '''
     Load the main dataframe that will contain for every image the following informations:
-    - visibility for each point
     - center: the center of the foosball table
     - direction: the normalized direction where the foosball table aim
+    - visibilities: the visibilities of the keypoints
     - dimension: the percentage of the image that is covered by the bounding box
     '''
     data = []
@@ -22,29 +22,41 @@ def load_labes_dataframe():
 
             with open(os.path.join(LABELS_DIRECTORY, file)) as label:
                 content = label.readline()
-
             numbers = [float(x) for x in content[1:].split()]  # we ignore the first number that is always 0, because we only have one class, the foosball table
 
-            # WARNING: we have to convert the position from the image coordinate system to a coordinate system more readable
+            # WARNING: we have to convert the position from the image coordinate system, where the top left point is 0
+            # to a coordinate system more familiar, where the bottom left point is 0
+            # knowing that the labels are normalized
+            # new_x = old_x
+            # new_y = 1.0 - old_y
             
             # the bounding box is rapresented as x and y of the center of the rectangle, and width and height of the rectangle
             bounding_box = (numbers[0], 1.0 - numbers[1], numbers[2], numbers[3])
             
-            # the keypoint are rapresente as x, y and visibility (2: visible, 1: not visible, 0: not present)
+            # the keypoints are rapresented as x, y and visibility (2: visible, 1: not visible, 0: not present)
             keypoints = []
+            visibilities = []
             for i in range(4, 28, 3):
-                keypoints.append((numbers[i], 1.0 - numbers[i+1], int(numbers[i+2])))
+                keypoints.append((numbers[i], 1.0 - numbers[i+1]))
+                visibilities.append(int(numbers[i+2]))
 
-            # let's calculate the dimension: how much the bounding box covers the image
-            dimension = bounding_box[2] * bounding_box[3]
+            # let's calculate the dimension: how much the bounding box covers the image as a percentage
+            dimension = (bounding_box[2] * bounding_box[3]) * 100.0
 
             # let's calculate the center of the foosball table
             # for simplicity, we consider the center of the upper rectangle as the center of the foosball table
 
             # intersection between the line (keypoints[0], keypoints[2]) and the line (keypoints[1], keypoints[3])
-            def calculate_intersection(line1, line2):
+            def calculate_intersection(line1: tuple, line2: tuple) -> tuple:
                 '''
-                ...
+                Calculate the intersection of 2 lines, each rapresented as 2 points in 2d.
+
+                Parameters:
+                line1 (tuple): The first line
+                line2 (tuple): The second line
+
+                Returns:
+                tuple: The point of intersection if it exists
                 '''
                 x_diff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
                 y_diff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
@@ -54,15 +66,14 @@ def load_labes_dataframe():
 
                 divisor = determinant(x_diff, y_diff)
                 if divisor == 0:
-                    raise ValueError('The lines do not intersect.')
+                    raise ValueError("The lines do not intersect.")
 
                 d = (determinant(*line1), determinant(*line2))
                 x = determinant(d, x_diff) / divisor
                 y = determinant(d, y_diff) / divisor
-                return [x, y]
+                return x, y
             
-
-            center = calculate_intersection([keypoints[0][0:2], keypoints[2][0:2]], [keypoints[1][0:2], keypoints[3][0:2]])
+            center = calculate_intersection((keypoints[0], keypoints[2]), (keypoints[1], keypoints[3]))
 
             # let's calculate the normalized direction of the foosball table
             # for simplicity, we consider the first 2 keypoints of the upper rectangle as the reference for the direction
@@ -74,11 +85,11 @@ def load_labes_dataframe():
             direction = [average_point[0] - center[0], average_point[1] - center[1]]
             direction = direction / np.linalg.norm(direction)
             
-            
             data.append({
                 "filename": file,
                 "center": center,
                 "direction": direction,
+                "visibilities": visibilities,
                 "dimension": dimension,
             })
             
