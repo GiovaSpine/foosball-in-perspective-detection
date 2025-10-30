@@ -3,12 +3,14 @@
 # these dataframes will be used in notebooks and during data augmentation
 
 import os
+import argparse
+import sys
 from PIL import Image
 import numpy as np
 import pandas as pd
 from config import *
 
-def load_labes_dataframe():
+def load_labels_dataframe():
     '''
     Load the main dataframe that will contain for every image the following informations:
     - center: the center of the foosball table
@@ -174,10 +176,46 @@ def load_images_dataframe():
 
 # load the dataframes and save them as .parquet
 
-df1 = load_images_dataframe()
-df1.to_parquet(IMAGES_DATAFRAME_DIRECTORY)
 
-df2 = load_labes_dataframe()
-df2.to_parquet(LABELS_DATAFRAME_DIRECTORY)
+def save_dataframe(df_to_generate: str) -> None:
+    '''
+    Generates and saves the requested dataframe.
+    
+    Parameters:
+    df_to_generate: {IMAGES, LABELS}
+
+    Returns:
+    None
+    '''
+    df_to_generate = df_to_generate.upper()
+
+    if df_to_generate == "IMAGES":
+        print(f"Loading dataframe for {df_to_generate}...")
+        df = load_images_dataframe()
+        output_path = IMAGES_DATAFRAME_DIRECTORY
+    elif df_to_generate == "LABELS":
+        print(f"Loading dataframe for {df_to_generate}...")
+        df = load_labels_dataframe()
+        output_path = LABELS_DATAFRAME_DIRECTORY
+    else:
+        print(f"Error: {df_to_generate} is not a valid request to generate a dataframe")
+        sys.exit(1)
+
+    print(f"Saving dataframe for {df_to_generate} in {output_path}...")
+    df.to_parquet(output_path)
+    print(f"Saved in: {output_path}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generates and saves the requested dataframe."
+    )
+    parser.add_argument(
+        "df_to_generate",
+        type=str,
+        help="The dataframe to generate (IMAGES, LABELS)",
+    )
+    args = parser.parse_args()
+    save_dataframe(args.df_to_generate)
 
 
