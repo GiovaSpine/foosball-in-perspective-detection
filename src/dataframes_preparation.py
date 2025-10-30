@@ -15,6 +15,7 @@ def load_labes_dataframe():
     - direction: the normalized direction where the foosball table aim
     - visibilities: the visibilities of the keypoints
     - dimension: the percentage of the image that is covered by the bounding box
+    - highest_keypoint: the id of the keypoint that is the highest on the y axis (lowest high in the image)
     '''
     data = []
     for file in os.listdir(LABELS_DIRECTORY):
@@ -29,16 +30,37 @@ def load_labes_dataframe():
             # knowing that the labels are normalized
             # new_x = old_x
             # new_y = 1.0 - old_y
+
+            def convert_old_y(old_y: float, visibility: int = 2) -> float:
+                '''
+                Converts the y coordinate from the coordinate system of the image, where 0 is at the top,
+                to the coordinate system where 0 is at the bottom, being careful about the visibility 0.
+
+                Parameters:
+                old_y (float): The y coordinate to convert
+                visibility (int): The visibility of the point where the y was taken
+
+                Returns:
+                float: The converted y coordinate
+                '''
+                if visibility == 0: return 0.0
+                else: return 1.0 - old_y
             
             # the bounding box is rapresented as x and y of the center of the rectangle, and width and height of the rectangle
-            bounding_box = (numbers[0], 1.0 - numbers[1], numbers[2], numbers[3])
+            bounding_box = (numbers[0], convert_old_y(numbers[1]), numbers[2], numbers[3])
             
             # the keypoints are rapresented as x, y and visibility (2: visible, 1: not visible, 0: not present)
             keypoints = []
             visibilities = []
             for i in range(4, 28, 3):
-                keypoints.append((numbers[i], 1.0 - numbers[i+1]))
-                visibilities.append(int(numbers[i+2]))
+                visibility = int(numbers[i+2])
+                keypoints.append((numbers[i], convert_old_y(numbers[i+1], visibility)))
+                visibilities.append(visibility)
+
+            highest_keypoint = np.argmax((np.array(keypoints))[:,1])
+            # if highest_keypoint is different from 0 or 1 we have an error in the annotations
+            if highest_keypoint > 1:
+                raise ValueError(f"Warning: the highest keypoint for {file} is {highest_keypoint}. Unable to generate dataframe")
 
             # let's calculate the dimension: how much the bounding box covers the image as a percentage
             dimension = (bounding_box[2] * bounding_box[3]) * 100.0
@@ -91,6 +113,7 @@ def load_labes_dataframe():
                 "direction": direction,
                 "visibilities": visibilities,
                 "dimension": dimension,
+                "highest_keypoint": highest_keypoint
             })
             
     return pd.DataFrame(data)
@@ -156,3 +179,5 @@ df1.to_parquet(IMAGES_DATAFRAME_DIRECTORY)
 
 df2 = load_labes_dataframe()
 df2.to_parquet(LABELS_DATAFRAME_DIRECTORY)
+
+
