@@ -1,4 +1,6 @@
 import os
+import argparse
+import sys
 import torch
 import numpy as np
 from sklearn.cluster import KMeans
@@ -127,42 +129,42 @@ def get_samples_and_centroids(k: int, kmeans: KMeans, X: np.ndarray, image_names
     return samples, centroids
 
 
-def clustering(features_path: str, clustering_path: str) -> None:
+def clustering(clustering_path: str, *feature_paths: str) -> None:
     '''
     Perform KMeans clustering on image features for multiple values of k
     and save the results as JSON files.
 
     Parameters:
-    features_path (str): The path of the features to cluster
     clustering_path (str): The path where the results of the clustering will be saved
+    *feature_paths (str): One or more paths where the features, saved as .pt, will be collected for KMeans
 
     Returns:
     None
     '''
-    if not os.path.exists(features_path) or not os.path.exists(clustering_path):
-        error_message = ""
-        if not os.path.exists(features_path):
-            error_message += f"features_path provided doesn't exists: {features_path}\n"
-        if not os.path.exists(clustering_path):
-            error_message += f"clustering_path provided doesn't exists: {clustering_path}\n"    
-        raise ValueError(error_message)
+
+    if not os.path.exists(clustering_path):
+        raise ValueError(f"clustering_path provided doesn't exists: {clustering_path}")
+    for fpath in feature_paths:
+        if not os.path.exists(fpath):
+            raise ValueError(f"clustering_path provided doesn't exists: {fpath}") 
         
     features = []  # this list will contain all features
     image_names = []  # this list will contain the names of the images in the same order of features
 
     # get all the features
-    for feature_name in os.listdir(features_path):
-        if not feature_name.endswith(".pt"):
-            continue  # ignore other types of files
-        
-        feature_path = os.path.join(features_path, feature_name)
-        feature = torch.load(feature_path).numpy()
+    for fpath in feature_paths:
+        for feature_name in os.listdir(fpath):
+            if not feature_name.endswith(".pt"):
+                continue  # ignore other types of files
+            
+            feature_path = os.path.join(fpath, feature_name)
+            feature = torch.load(feature_path).numpy()
 
-        # the vector might be (n_features,) so we convert the vector to (1, n_features) to be sure
-        feature = feature.reshape(1, -1)
+            # the vector might be (n_features,) so we convert the vector to (1, n_features) to be sure
+            feature = feature.reshape(1, -1)
 
-        features.append(feature)
-        image_names.append(os.path.splitext(feature_name)[0])
+            features.append(feature)
+            image_names.append(os.path.splitext(feature_name)[0])
 
     # X has to be (n_samples, n_features)
     X = np.vstack(features)
@@ -207,14 +209,48 @@ def clustering(features_path: str, clustering_path: str) -> None:
 
         print(f"Results saved in {os.path.join(clustering_path, filename)}\n")
 
-    print(f"Done clustering for {features_path}\n")
+    # save all labels as a single json file
+    # we need those to know on which image to operate if we see any issues with the clustering
+    with open(os.path.join(clustering_path, ALL_CLUSTERING_LABELS_FILENAME), "w") as f:
+        json.dump(all_labels, f, indent=4)
 
-    return all_labels
+    print(f"Done clustering for {feature_paths}\n")
+
+# =============================================================================
 
 
-all_labels = clustering(FEATURES_DIRECTORY, CLUSTERING_DIRECTORY)
+def execute_clustering(dataset: str) -> None:
+    '''
+    Starts the clustering fot the desired dataset.
+    
+    Parameters:
+    dataset: {DEFAULT, ADDED}
 
-# save all labels as a single json file
-# we need those to know on which image to operate if we see any issues with the clustering
-with open(os.path.join(CLUSTERING_DIRECTORY, ALL_CLUSTERING_LABELS_FILENAME), "w") as f:
-    json.dump(all_labels, f, indent=4)
+    Returns:
+    None
+    '''
+    dataset = dataset.upper()
+
+    if dataset == "DEFAULT":
+        print(f"Clustering for {dataset}...")
+        output_path = DEFAULT_CLUSTERING_DIRECTORY
+        clustering(output_path, FEATURES_DIRECTORY)
+    elif dataset == "ADDED":
+        print(f"Clustering for {dataset}...")
+        output_path = ADDED_CLUSTERING_DIRECTORY
+        clustering(output_path, FEATURES_DIRECTORY, ADDED_FEATURES_DIRECTORY)
+    else:
+        print(f"Error: {dataset} is not a valid dataset for clustering")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Starts the clustering fot the desired dataset."
+    )
+    parser.add_argument(
+        "dataset",
+        type=str,
+        help="The dataset of features (DEFAULT, ADDED)",
+    )
+    args = parser.parse_args()
+    execute_clustering(args.dataset)

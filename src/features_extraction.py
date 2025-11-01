@@ -59,4 +59,4 @@ def extract_features(images_path: str, features_path: str) -> None:
     print(f"Done extracting features for {images_path}")
 
 
-extract_features(IMAGES_DATA_DIRECTORY, FEATURES_DIRECTORY)
+extract_features(ADDED_IMAGES_DATA_DIRECTORY, ADDED_FEATURES_DIRECTORY)
