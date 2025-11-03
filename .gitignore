@@ -1,7 +1,7 @@
 .venv/
 
 data/features/*.pt
-augmented-data/added-features/*.pt
+added-data/added-features/*.pt
 augmented-data/augmented-features/*.pt
 
 data/images/*.jpg
@@ -11,12 +11,12 @@ data/images/*.JPEG
 data/images/*.png
 data/images/*.PNG
 
-augmented-data/added-images/*.jpg
-augmented-data/added-images/*.JPG
-augmented-data/added-images/*.jpeg
-augmented-data/added-images/*.JPEG
-augmented-data/added-images/*.png
-augmented-data/added-images/*.PNG
+added-data/added-images/*.jpg
+added-data/added-images/*.JPG
+added-data/added-images/*.jpeg
+added-data/added-images/*.JPEG
+added-data/added-images/*.png
+added-data/added-images/*.PNG
 
 augmented-data/augmented-images/*.jpg
 augmented-data/augmented-images/*.JPG
@@ -26,7 +26,7 @@ augmented-data/augmented-images/*.png
 augmented-data/augmented-images/*.PNG
 
 data/labels/*.txt
-augmented-data/added-labels/*.txt
+added-data/added-labels/*.txt
 augmented-data/augmented-labels/*.txt
 
 results/images/default-cluster-images/*.png

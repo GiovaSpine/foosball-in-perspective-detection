@@ -17,13 +17,13 @@ FEATURES_DIRECTORY = f"{PROJECT_DIRECTORY}/data/features"
 LABELS_DIRECTORY = f"{PROJECT_DIRECTORY}/data/labels"
 
 # absolute path of the added data/images
-ADDED_IMAGES_DATA_DIRECTORY = f"{PROJECT_DIRECTORY}/augmented-data/added-images"
+ADDED_IMAGES_DATA_DIRECTORY = f"{PROJECT_DIRECTORY}/added-data/added-images"
 
 # absolute path of the added features obtained with a pretrained model on the data
-ADDED_FEATURES_DIRECTORY = f"{PROJECT_DIRECTORY}/augmented-data/added-features"
+ADDED_FEATURES_DIRECTORY = f"{PROJECT_DIRECTORY}/added-data/added-features"
 
 # absolute path of the added labels/annotations of the data
-ADDED_LABELS_DIRECTORY = f"{PROJECT_DIRECTORY}/augmented-data/added-labels"
+ADDED_LABELS_DIRECTORY = f"{PROJECT_DIRECTORY}/added-data/added-labels"
 
 # absolute path of the augmented data/images
 AUGMENTED_IMAGES_DATA_DIRECTORY = f"{PROJECT_DIRECTORY}/augmented-data/augmented-images"
@@ -70,8 +70,10 @@ LABELS_EXTENSION = ".txt"
 
 # FILENAMES
 
+# name for the json file that for each image, will contain a list that specify for each k, which cluster the image belongs to
 ALL_CLUSTERING_LABELS_FILENAME = "all_clustering_labels.json"
 
+# name for the json file that will contain the results of a KMeans for a specific k
 def get_clustering_filename(k: int) -> str:
     '''
     Get the filename for the clustering results for a specific k.
@@ -87,6 +89,7 @@ def get_clustering_filename(k: int) -> str:
     
     return f"clustering_for_k_equal_{k}.json"
 
+# name of the image that shows for a specific k, all the cluster sizes
 def get_cluster_counts_image_filename(k: int) -> str:
     '''
     Get the filename for the clustering counts graph for a specific k.
@@ -102,6 +105,7 @@ def get_cluster_counts_image_filename(k: int) -> str:
     
     return f"cluster_counts_image_k_{k}.png"
 
+# name of the image that shows some samples of a specific cluster of a specific k analysis
 def get_cluster_image_filename(k: int, cluster_id: int) -> str:
     '''
     Get the filename for the image of cluster, identified with k and cluster_id.
@@ -121,6 +125,18 @@ def get_cluster_image_filename(k: int, cluster_id: int) -> str:
     
     return f"cluster_image_k_{k}_cluster_id_{cluster_id}.png"
 
+# name of the augmented image obtained from a original image (source)
+def get_augmented_image_name(source_image_name: str) -> str:
+    '''
+    Get the filename for an augmented image, created from a source image, that doesn't have an extension
+
+    Parameters:
+    source_image_name (str): The source/orginal image without extension
+
+    Returns:
+    str: The filename
+    '''
+    return f"ad_" + source_image_name + ".png"
 
 # =========================================================
 
