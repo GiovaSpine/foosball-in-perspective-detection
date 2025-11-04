@@ -120,10 +120,14 @@ def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_
         # the rule is NOT followed
         if min_index == 2 or min_index == 3:
             # we have to change 2 with 0, 3 with 1, and follow the clockwise order for the rest
-            augmented_kps[2], augmented_kps[0] = augmented_kps[0], augmented_kps[2]
-            augmented_kps[3], augmented_kps[1] = augmented_kps[1], augmented_kps[3]
-            augmented_kps[6], augmented_kps[4] = augmented_kps[4], augmented_kps[6]
-            augmented_kps[7], augmented_kps[5] = augmented_kps[5], augmented_kps[7]
+            aux_kps = augmented_kps.copy()
+
+            swap_map = {0: 2, 1: 3, 2: 0, 3: 1, 4: 6, 5: 7, 6: 4, 7: 5}
+
+            for dst, src in swap_map.items():
+                aux_kps[dst] = augmented_kps[src]
+
+            augmented_kps = aux_kps
         else:
             # something went wrong, but it shouldn't be possibile to have one of the last 4 keypoints to be the highest
             print(f"WARNING: not valid augmented keypoints for {image_name}")

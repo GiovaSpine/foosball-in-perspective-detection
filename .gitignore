@@ -35,3 +35,4 @@ results/images/added-cluster-images/*.png
 src/__pycache__/
 
 src/test.py
+results/test/
