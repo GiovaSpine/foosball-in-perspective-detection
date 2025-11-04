@@ -34,7 +34,7 @@ from config import *
 
 # LOADING AND SAVING
 
-def labels_loading(image_names: list[str]) -> tuple:
+def paths_and_labels_loading(image_names: list[str]) -> tuple:
     '''
     Loads all the labels of a list of images.
 
@@ -104,7 +104,11 @@ def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_
     # WARNING: we have a rule: the highest keypoint (lowest y) has to be either the first keypoint or the second
     # rotating the image can cause this rule to not be respected, so we have to check the keypoints
 
-    min_index = np.argmin(augmented_kps, axis=0)[1]
+    # be careful about the points with visibility 0, because the value is 0 (the lowest)
+    augmented_kps = np.array(augmented_kps)
+    visible = augmented_kps[:, 2] != 0  # boolean mask of visible keypoints
+    min_index = np.argmin(augmented_kps[visible, 1])  # min index for the visible
+    min_index = np.arange(len(augmented_kps))[visible][min_index]  # convert to original array
 
     if min_index > 1:
         # the rule is NOT followed
@@ -261,6 +265,37 @@ def find_max_traslation(width: int, height: int, keypoints: list, affine_scale: 
     return (-new_min_x + margin_px, max_trasl_x - margin_px), (-new_min_y + margin_px, max_trasl_y - margin_px)
 
 
+def check_valid_keypoints(width: int, height: int, keypoints: list) -> bool:
+    '''
+
+    Returns:
+    bool: True if the keypoints are valid, False otherwise
+    '''
+    if len(keypoints) != 8:
+        return False
+    
+    # let's check the first 4 keypoints
+    for x, y, _ in keypoints[0:4]:
+        if x < 0 or x >= width or y < 0 or y >= height:
+            return False
+        
+    return True
+
+
+def fix_keypoints(width: int, height: int, keypoints: list) -> list:
+    '''
+    '''
+    # we know that the first 4 keypoints are already valid
+    fixed = keypoints[0:4]
+    for x, y, v in keypoints[4:]:
+        if x < 0 or x >= width or y < 0 or y >= height:
+            v = 0   # mark as not visible
+            x = 0.0
+            y = 0.0
+        fixed.append((x, y, v))
+    return fixed
+    
+
 # =============================================================================
 
 # TRANSFORMATIONS
@@ -296,7 +331,7 @@ def get_clustering_transformation(
                         rotate=angle_limit,
                         shear=0,
                         fit_output=False,
-                        border_mode=cv2.BORDER_REFLECT,
+                        border_mode=cv2.BORDER_REPLICATE,
                         p=1.0
                     ),
                     A.Resize(height = new_height, width= new_width),
@@ -308,7 +343,7 @@ def get_clustering_transformation(
                         A.GaussianBlur(sigma_limit=(0.1, 0.7), p=1.0)
                     ], p=0.5)
                 ],
-                keypoint_params=A.KeypointParams(format="xy", remove_invisible=True),
+                keypoint_params=A.KeypointParams(format="xy", remove_invisible=False),
                 bbox_params=A.BboxParams(format="yolo", label_fields=[])
             )
     
@@ -318,10 +353,23 @@ def get_clustering_transformation(
 
 # DATA AUGMENTATION
 
-def data_augmentation(image_names: list, n_images_to_generate: int) -> None:
+def cluster_data_augmentation(image_names: list, n_images_to_generate: int) -> None:
     '''
-    ...
+    Applies data augmentation for a specific cluster, from a list of images to generate 'n_images_to_generate' new augmented images.
+    If len(images_names) > n_images_to_generate, the function will take randomly 'n_images_to_generate' images and generate a new one from each.
+    Otherwise some images will have to generate more than one.
+    The results are saved in the augmented-data folder.
+
+    Parameters:
+    image_names (list): The list of image names to which apply data augmentation
+    n_images_to_generate (int): The amount of new augmented images to generate
+
+    Returns:
+    None
     '''
+    if n_images_to_generate <= 0 or n_images_to_generate > 200:
+        # can't be less than 0 or too high (in the clustersing data augmentation)
+        raise ValueError("Error: not valid n_images_to_generate")
 
     if len(image_names) > n_images_to_generate:
         # it means that we have to grab randomly n_images_to_generate images and generate one image from each
@@ -335,8 +383,7 @@ def data_augmentation(image_names: list, n_images_to_generate: int) -> None:
         distribution = distribute_evenly(len(image_names), n_images_to_generate)  # distribution says how many augmented images has to generate each image
 
     # labels loading
-    image_paths, bboxes, keypoints = labels_loading(image_names)
-    a, b, c = labels_loading()
+    image_paths, bboxes, keypoints = paths_and_labels_loading(image_names)
     
     for index in range(len(image_names)):
         image = cv2.imread(image_paths[index])
@@ -346,10 +393,10 @@ def data_augmentation(image_names: list, n_images_to_generate: int) -> None:
         # but we don't want the first 4 keypoints to be cutted out
         # for this reason we will find the precise max scale and max traslation that won't cause this behaviour
         # and iteratively we will change the angle of the rotation, until all the first 4 keypoints are present in the image
-        max_affine_scale = max_centered_scale(w, h, keypoints[index][0:5], margin_px=10.0, max_scale=1.15)
+        max_affine_scale = max_centered_scale(w, h, keypoints[index][0:4], margin_px=10.0, max_scale=1.15)
         affine_scale = random.uniform(1.0, max_affine_scale)
 
-        (min_x_trasl, max_x_trasl), (min_y_trasl, max_y_trasl) = find_max_traslation(w, h, keypoints[index][0:5], affine_scale, margin_px=10.0)
+        (min_x_trasl, max_x_trasl), (min_y_trasl, max_y_trasl) = find_max_traslation(w, h, keypoints[index][0:4], affine_scale, margin_px=10.0)
         x_trasl = random.uniform(min_x_trasl/3.0, max_x_trasl/3.0)
         y_trasl = random.uniform(min_y_trasl/3.0, max_y_trasl/3.0)
 
@@ -375,15 +422,13 @@ def data_augmentation(image_names: list, n_images_to_generate: int) -> None:
                 keypoints=keypoints[index]
             )
 
-            augmented_image = augmentations["image"]
-            augmented_bb = augmentations["bboxes"][0]
-            augmented_keypoints = augmentations["keypoints"]
-
-            # check if the geometric trasformation caused to have more bounding boxes or more than 8 keypoints
-            if len(augmentations["bboxes"]) > 1 or len(augmentations["keypoints"]) != 8:
+            # check if the geometric trasformation caused to have more bounding boxes, more than 8 keypoints
+            # or id the first 4 keypoints to be cutted out from the image
+            if len(augmentations["bboxes"]) > 1 or not check_valid_keypoints(new_width, new_height, augmentations["keypoints"]):
                 angle_limit = (angle_limit[0] + ANGLE_STEP, angle_limit[1] - ANGLE_STEP) # reduce the angle limit interval
                 if(angle_limit[0] > 0.0 or angle_limit[1] < 0.0):
                     # it means there isn't a possible valid interval, and so we should go on
+                    # but it shouldn't be possible, because if the angle is 0.0, scale and translation do not cause points to be cutted out 
                     print(f"WARNING: unable to apply data augmentation for {image_names[index]}")
                     iteration += 1
                     continue
@@ -391,14 +436,14 @@ def data_augmentation(image_names: list, n_images_to_generate: int) -> None:
                     # redo the iteration
                     continue
 
-            save_augmented_data(image_names[index], augmented_image, augmented_bb, augmented_keypoints)
+            # WARNING: if in the transformation we use remove_invisible=False, and some transformed keypoints are cutted out from the image,
+            # Albumentations will keep them, but it won't change the x, y, v to 0, 0, 0 (the coordinates will be outside the image)
+            fixed_keypoints = fix_keypoints(new_height, new_width, augmentations["keypoints"])
+
+            save_augmented_data(image_names[index], augmentations["image"], augmentations["bboxes"][0], fixed_keypoints)
             iteration += 1
 
-    return
 
-
-
-        
 
 # =============================================================================
 
@@ -434,7 +479,7 @@ for k in range(MIN_N_CLUSTERS, MAX_N_CLUSTERS + 1):
             # we apply some data augmentation
 
             n_images_to_generate = min(cluster_counts[cluster_id] * MAX_AUG_PER_IMAGE, max_count - MAX_DIFFERENCE - cluster_counts[cluster_id])
-            n_images_to_generate = round(n_images_to_generate * ideality_array[cluster_id])
+            n_images_to_generate = round(n_images_to_generate * ideality_array[cluster_id])  # reduce the amount of images to generate
             
             # let's grab the image names that belongs in this cluster
             image_names = []
@@ -442,7 +487,7 @@ for k in range(MIN_N_CLUSTERS, MAX_N_CLUSTERS + 1):
                 if labels[index] == cluster_id:
                     image_names.append(image)
 
-            data_augmentation(image_names, n_images_to_generate)
+            cluster_data_augmentation(image_names, n_images_to_generate)
     
     # stop for testing
     exit(1)

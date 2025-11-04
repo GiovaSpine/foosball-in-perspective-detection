@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 # =========================================================
@@ -136,7 +137,19 @@ def get_augmented_image_name(source_image_name: str) -> str:
     Returns:
     str: The filename
     '''
-    return f"ad_" + source_image_name + ".png"
+    folder = Path(AUGMENTED_IMAGES_DATA_DIRECTORY)
+    pattern = re.compile(rf"da_(\d+)_{re.escape(source_image_name)}\.png")
+
+    max_k = -1
+    # let's search to see if there is already an image with this name, with a different number
+    for file in folder.glob(f"da_*_{source_image_name}.png"):
+        match = pattern.match(file.name)
+        if match:
+            k = int(match.group(1))
+            max_k = max(max_k, k)
+
+    next_k = max_k + 1   # first will be 0 if none exists
+    return f"da_{next_k}_{source_image_name}.png"
 
 # =========================================================
 
