@@ -34,60 +34,66 @@ from config import *
 
 # LOADING AND SAVING
 
-def paths_and_labels_loading(image_names: list[str]) -> tuple:
+def labels_loading(image_name: str, width: int=0, height: int=0, denormalize: str="none") -> tuple:
     '''
-    Loads all the labels of a list of images.
+    Loads the labels from an image.
+    If denormalize="none", the bounding box and the keypoints will stay normalized, according to the COCO Keypoints 1.0 format.
+    If denormalize != "none", the function needs width and height to denormalize either the bounding box, the keypoints or both.
+    denormalize can be {none, bbox, keypoints, both}
 
     Parameters:
-    image_names (list[str]): The list of images for which we want the labels
+    image_names (str): The image name without extension
+    width (int): The width of the image, needed if we want to denormalize
+    height (int): The height of the image, needed if we want to denormalize
+    denormalize (str): Specifies if the function has to denormalize the labels. It can be "none" if no denormalization is needed,
+                       "bbox" if only the bbox has to be denormalized, "keypoints" if only the keypoints have to be denormalized,
+                        or "both" if both need to be denormalized
 
     Returns:
-    tuple: The labels in the form image_paths, bboxes, keypoints
+    tuple: The labels in the form bbox, keypoints
     '''
-    # image paths
-    image_paths = []
-
-    # labels
-    bboxes = []
-    keypoints = []
+    if denormalize not in ["none", "bbox", "keypoints", "both"]:
+        raise ValueError(f"Error: not valid 'denormalize': {denormalize} not in ['none', 'bbox', 'keypoints', 'both']")
+    
+    if denormalize != "none" and (width <= 0 or height <= 0):
+        raise ValueError(f"Error: not valid 'height', 'width', can't denormalize")
+    
+    bbox_mul_x = 1.0
+    bbox_mul_y = 1.0
+    kps_mul_x = 1.0
+    kps_mul_y = 1.0
+    
+    if denormalize == "bbox":
+        bbox_mul_x = width
+        bbox_mul_y = height
+    if denormalize == "keypoints":
+        kps_mul_x = width
+        kps_mul_y = height
+    if denormalize == "both":
+        bbox_mul_x = width
+        bbox_mul_y = height
+        kps_mul_x = width
+        kps_mul_y = height     
 
     # we need to look both at LABELS_DIRECTORY and ADDED_LABELS_DIRECTORY
-    for image_name in image_names:
-
-        image_path = find_image_path(image_name, IMAGES_DATA_DIRECTORY, ADDED_IMAGES_DATA_DIRECTORY)
-        if image_path == None:
-            raise FileNotFoundError(
-                f"Image {image_name} not found in {IMAGES_DATA_DIRECTORY} or {ADDED_IMAGES_DATA_DIRECTORY}"
-            )
-        # else we have the image, we need to open it to have the dimension
-        image_paths.append(image_path)
-        image = cv2.imread(image_paths[len(image_paths) - 1])
-        h, w = image.shape[:2]
-
-        all_labels = []
-
+    try:
+        with open(os.path.join(LABELS_DIRECTORY, image_name + LABELS_EXTENSION), "r") as f:
+            labels = f.read().strip().split()
+    except Exception:
         try:
-            with open(os.path.join(LABELS_DIRECTORY, image_name + LABELS_EXTENSION), "r") as f:
-                all_labels.append(f.read().strip().split())
-        except Exception:
-            try:
-                with open(os.path.join(ADDED_LABELS_DIRECTORY, image_name + LABELS_EXTENSION), "r") as f:
-                    all_labels.append(f.read().strip().split())
-            except FileNotFoundError:
-                raise FileNotFoundError(
-                    f"Label {image_name + LABELS_EXTENSION} not found in {LABELS_DIRECTORY} or {ADDED_LABELS_DIRECTORY}"
-                )
-            
-        # from all_labels let's obtain more clean variables
+            with open(os.path.join(ADDED_LABELS_DIRECTORY, image_name + LABELS_EXTENSION), "r") as f:
+                labels = f.read().strip().split()
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"Label {image_name + LABELS_EXTENSION} not found in {LABELS_DIRECTORY} or {ADDED_LABELS_DIRECTORY}"
+            )
         
-        # the bounding box can stay normalized
-        # but we need to convert the keypoints from normalized to pixel for Albumentations
-        for labels in all_labels:
-            bboxes.append([float(labels[i]) for i in range(1, 5)])
-            kps = labels[5:]
-            keypoints.append([(float(kps[i]) * w, float(kps[i+1]) * h, int(kps[i+2])) for i in range(0, len(kps), 3)])
+    # (0 for the class, 4 numbers for the bbox and the rest for the keypoints)
+    bbox = [float(labels[1]) * bbox_mul_x, float(labels[2]) * bbox_mul_y, float(labels[3]) * bbox_mul_x, float(labels[4]) * bbox_mul_y]
+    kps = labels[5:]
+    keypoints = [(float(kps[i]) * kps_mul_x, float(kps[i+1]) * kps_mul_y, int(kps[i+2])) for i in range(0, len(kps), 3)]
 
-    return image_paths, bboxes, keypoints
+    return bbox, keypoints
 
 
 
@@ -265,7 +271,7 @@ def find_max_traslation(width: int, height: int, keypoints: list, affine_scale: 
     return (-new_min_x + margin_px, max_trasl_x - margin_px), (-new_min_y + margin_px, max_trasl_y - margin_px)
 
 
-def check_valid_keypoints(width: int, height: int, keypoints: list) -> bool:
+def are_keypoints_valid(width: int, height: int, keypoints: list) -> bool:
     '''
 
     Returns:
@@ -353,95 +359,85 @@ def get_clustering_transformation(
 
 # DATA AUGMENTATION
 
-def cluster_data_augmentation(image_names: list, n_images_to_generate: int) -> None:
+def cluster_data_augmentation(image_name: str, n_images_to_generate: int) -> None:
     '''
-    Applies data augmentation for a specific cluster, from a list of images to generate 'n_images_to_generate' new augmented images.
-    If len(images_names) > n_images_to_generate, the function will take randomly 'n_images_to_generate' images and generate a new one from each.
-    Otherwise some images will have to generate more than one.
+    Applies data augmentation to generate n_images_to_generate augmented images, from a specific image to balance a cluster.
     The results are saved in the augmented-data folder.
 
     Parameters:
-    image_names (list): The list of image names to which apply data augmentation
+    image_name (str): The name of the image where data augmentation will be applied
     n_images_to_generate (int): The amount of new augmented images to generate
 
     Returns:
     None
     '''
-    if n_images_to_generate <= 0 or n_images_to_generate > 200:
-        # can't be less than 0 or too high (in the clustersing data augmentation)
-        raise ValueError("Error: not valid n_images_to_generate")
-
-    if len(image_names) > n_images_to_generate:
-        # it means that we have to grab randomly n_images_to_generate images and generate one image from each
-        # let's grab randomly n_images_to_generate images
-        np.random.shuffle(image_names)
-        image_names = image_names[0:n_images_to_generate]
-
-        distribution = [1] * n_images_to_generate  # distribution says how many augmented images has to generate each image
-    else:
-        # it means that some images have to generate more images
-        distribution = distribute_evenly(len(image_names), n_images_to_generate)  # distribution says how many augmented images has to generate each image
+    # path loading
+    image_path = find_image_path(image_name, IMAGES_DATA_DIRECTORY, ADDED_IMAGES_DATA_DIRECTORY)
+    if image_path == None:
+        raise FileNotFoundError(
+            f"Image {image_name} not found in {IMAGES_DATA_DIRECTORY} or {ADDED_IMAGES_DATA_DIRECTORY}"
+        )
+    image = cv2.imread(image_path)
+    h, w = image.shape[:2]
 
     # labels loading
-    image_paths, bboxes, keypoints = paths_and_labels_loading(image_names)
+    # Albumentations can work with normalized boundinb boxes, but not with normalized keypoints, so we have to denormalize them
+    bbox, keypoints = labels_loading(image_name, w, h, denormalize="keypoints")
     
-    for index in range(len(image_names)):
-        image = cv2.imread(image_paths[index])
-        h, w = image.shape[:2]
 
-        # when applying a geometric transform (scale, traslation, rotation), we can cause some of the keypoints to be cutted out from the image
-        # but we don't want the first 4 keypoints to be cutted out
-        # for this reason we will find the precise max scale and max traslation that won't cause this behaviour
-        # and iteratively we will change the angle of the rotation, until all the first 4 keypoints are present in the image
-        max_affine_scale = max_centered_scale(w, h, keypoints[index][0:4], margin_px=10.0, max_scale=1.15)
-        affine_scale = random.uniform(1.0, max_affine_scale)
+    # when applying a geometric transform (scale, traslation, rotation), we can cause some of the keypoints to be cutted out from the image
+    # but we don't want the first 4 keypoints to be cutted out
+    # for this reason we will find the precise max scale and max traslation that won't cause this behaviour
+    # and iteratively we will change the angle of the rotation, until all the first 4 keypoints are present in the image
+    max_affine_scale = max_centered_scale(w, h, keypoints[0:4], margin_px=10.0, max_scale=1.15)
+    affine_scale = random.uniform(1.0, max_affine_scale)
 
-        (min_x_trasl, max_x_trasl), (min_y_trasl, max_y_trasl) = find_max_traslation(w, h, keypoints[index][0:4], affine_scale, margin_px=10.0)
-        x_trasl = random.uniform(min_x_trasl/3.0, max_x_trasl/3.0)
-        y_trasl = random.uniform(min_y_trasl/3.0, max_y_trasl/3.0)
+    (min_x_trasl, max_x_trasl), (min_y_trasl, max_y_trasl) = find_max_traslation(w, h, keypoints[0:4], affine_scale, margin_px=10.0)
+    x_trasl = random.uniform(min_x_trasl/3.0, max_x_trasl/3.0)
+    y_trasl = random.uniform(min_y_trasl/3.0, max_y_trasl/3.0)
 
-        angle_limit = (-8.0, 8.0)
-        ANGLE_STEP = 0.5
+    angle_limit = (-6.0, 6.0)
+    ANGLE_STEP = 0.5
 
-        # let's find a new width and height: let's say if we have a resolution of 2.000.000 pixel
-        # we can have a max increment or decrement of 100 (because we can't increment or decrement of 100 in low resolution images)
-        increment = int((100 * h * w) / 2000000)
-        new_width = w + random.randrange(-increment, increment)
-        new_height = int((new_width * h) / w)  # keep the original aspect ratio
+    # let's find a new width and height: let's say if we have a resolution of 2.000.000 pixel
+    # we can have a max increment or decrement of 100 (because we can't increment or decrement of 100 in low resolution images)
+    increment = int((100 * h * w) / 2000000)
+    new_width = w + random.randrange(-increment, increment)
+    new_height = int((new_width * h) / w)  # keep the original aspect ratio
+    
+    # with distribution we know how many times we need to apply data augmentation for this image
+    iteration = 0
+    while iteration < n_images_to_generate:            
         
-        # with distribution we know how many times we need to apply data augmentation for this image
-        iteration = 0
-        while iteration < distribution[index]:            
-            
-            # we have to recalculate it because angle_limit can change iteratively
-            transform = get_clustering_transformation(affine_scale, x_trasl, y_trasl, angle_limit, new_width, new_height)
+        # we have to recalculate it because angle_limit can change iteratively
+        transform = get_clustering_transformation(affine_scale, x_trasl, y_trasl, angle_limit, new_width, new_height)
 
-            augmentations = transform(
-                image=image,
-                bboxes=[bboxes[index]],  # we have only one bounding box per image
-                keypoints=keypoints[index]
-            )
+        augmentations = transform(
+            image=image,
+            bboxes=[bbox],  # we have only one bounding box per image
+            keypoints=keypoints
+        )
 
-            # check if the geometric trasformation caused to have more bounding boxes, more than 8 keypoints
-            # or id the first 4 keypoints to be cutted out from the image
-            if len(augmentations["bboxes"]) > 1 or not check_valid_keypoints(new_width, new_height, augmentations["keypoints"]):
-                angle_limit = (angle_limit[0] + ANGLE_STEP, angle_limit[1] - ANGLE_STEP) # reduce the angle limit interval
-                if(angle_limit[0] > 0.0 or angle_limit[1] < 0.0):
-                    # it means there isn't a possible valid interval, and so we should go on
-                    # but it shouldn't be possible, because if the angle is 0.0, scale and translation do not cause points to be cutted out 
-                    print(f"WARNING: unable to apply data augmentation for {image_names[index]}")
-                    iteration += 1
-                    continue
-                else:
-                    # redo the iteration
-                    continue
+        # check if the trasformation caused to have more bboxes, more than 8 keypoints or the first 4 keypoints to be cutted out from the image
+        if len(augmentations["bboxes"]) > 1 or not are_keypoints_valid(new_width, new_height, augmentations["keypoints"]):
+            angle_limit = (angle_limit[0] + ANGLE_STEP, angle_limit[1] - ANGLE_STEP) # reduce the angle limit interval
+            if(angle_limit[0] > 0.0 or angle_limit[1] < 0.0):
+                # it means there isn't a possible valid interval, and so we should go on
+                # but it shouldn't be possible, because if the angle is 0.0, scale and translation do not cause 4 first keypoints to be cutted out 
+                print(f"WARNING: unable to apply data augmentation for {image_names[index]}")
+                iteration += 1
+                continue
+            else:
+                # redo the iteration
+                continue
 
-            # WARNING: if in the transformation we use remove_invisible=False, and some transformed keypoints are cutted out from the image,
-            # Albumentations will keep them, but it won't change the x, y, v to 0, 0, 0 (the coordinates will be outside the image)
-            fixed_keypoints = fix_keypoints(new_height, new_width, augmentations["keypoints"])
+        # WARNING: if in the transformation we use remove_invisible=False, and some transformed keypoints are cutted out from the image,
+        # Albumentations will keep them, but it won't change the x, y, v to 0, 0, 0 (the coordinates will be outside the image)
+        fixed_keypoints = fix_keypoints(new_width, new_height, augmentations["keypoints"])
 
-            save_augmented_data(image_names[index], augmentations["image"], augmentations["bboxes"][0], fixed_keypoints)
-            iteration += 1
+        save_augmented_data(image_name, augmentations["image"], augmentations["bboxes"][0], fixed_keypoints)
+
+        iteration += 1
 
 
 
@@ -456,6 +452,8 @@ all_clustering_labels = load_all_clustering_label(ADDED_CLUSTERING_DIRECTORY)
 MAX_DIFFERENCE = 20
 
 # max number of images generable with data augmentation from a single image
+# it's important because if we have a cluster with a few image, and a high max_count
+# we shouldn't generate to many images from the few one (we might introduce a bias)
 MAX_AUG_PER_IMAGE = 3
 
 # ideality is a number from 0.0 to 1.0, that limits the amount of images to generate
@@ -484,10 +482,20 @@ for k in range(MIN_N_CLUSTERS, MAX_N_CLUSTERS + 1):
             # let's grab the image names that belongs in this cluster
             image_names = []
             for image, labels in all_clustering_labels.items():
-                if labels[index] == cluster_id:
-                    image_names.append(image)
+                if labels[index] == cluster_id: image_names.append(image)
 
-            cluster_data_augmentation(image_names, n_images_to_generate)
+            if len(image_names) > n_images_to_generate:
+                # it means that we have to grab randomly n_images_to_generate images and generate one image from each
+                np.random.shuffle(image_names)
+                image_names = image_names[0:n_images_to_generate]
+                distribution = [1] * n_images_to_generate  # distribution says how many augmented images has to generate each image
+            else:
+                # it means that some images have to generate more than one image
+                distribution = distribute_evenly(len(image_names), n_images_to_generate)  # distribution says how many augmented images has to generate each image
+
+            print(f"For k={k}, cluster_id={cluster_id}, we generate {n_images_to_generate} images")
+            for i in range(len(image_names)):
+                cluster_data_augmentation(image_names[i], distribution[i])
     
     # stop for testing
     exit(1)
