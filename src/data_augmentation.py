@@ -304,6 +304,57 @@ def fix_keypoints(width: int, height: int, keypoints: list) -> list:
             y = 0.0
         fixed.append((x, y, v))
     return fixed
+
+
+def clean_keypoints(width: int, height: int, keypoints: list) -> tuple:
+    '''
+    '''
+
+    # keypoints is an array "logically" divided in pieces of 8
+    # it might be difficult to find the central piece, and so we look at each piece
+    # if a piece have at least one of the first 4 keypoints outside the image, it's not the central
+    # the central can also have one of the first 4 keypoints outside the image, in that case no piece have
+    # all the 4 first keypoints inside the image and result is false
+
+    valid_pieces = 0
+    valid_piece_index = -1
+
+    for i in range(0, len(keypoints), 8):
+        count_valid_kp = 0
+
+        for j in range(0, 4):
+            if 0 <= keypoints[i + j][0] < width and 0 <= keypoints[i + j][1] < height:
+                # the keypoint is valid
+                count_valid_kp += 1
+            else:
+                # the keypoint is NOT valid, we can already break, because the piece won't be valid
+                break
+
+        if count_valid_kp == 4:
+            # we have a valid piece, with the first 4 keypoints valid
+            valid_pieces += 1
+            valid_piece_index = i
+
+    if valid_pieces == 0:
+        # there are some problems for the central piece, that we can solve by chaingin the angle
+        return [], False
+    elif valid_pieces > 1:
+        # ABSURD: it shouldn't happen to have more valid pieces
+        print("Error: more valid_pieces > 1; it shouldn't be possible")
+        return [], False
+        
+    # we might already fix the 4 last keypoints
+    # if they are outside the image they should be 0, 0, 0
+
+    fixed = keypoints[valid_piece_index : valid_piece_index + 4]
+    for x, y, v in keypoints[valid_piece_index + 4 : valid_piece_index + 8]:
+        if x < 0 or x >= width or y < 0 or y >= height:
+            v = 0   # mark as not visible
+            x = 0.0
+            y = 0.0
+        fixed.append((x, y, v))
+
+    return fixed, True
     
 
 # =============================================================================
@@ -341,7 +392,7 @@ def get_clustering_transformation(
                         rotate=angle_limit,
                         shear=0,
                         fit_output=False,
-                        border_mode=cv2.BORDER_REPLICATE,
+                        border_mode=cv2.BORDER_REFLECT,
                         p=1.0
                     ),
                     A.Resize(height = new_height, width= new_width),
@@ -393,7 +444,7 @@ def cluster_data_augmentation(image_name: str, n_images_to_generate: int) -> Non
     # but we don't want the first 4 keypoints to be cutted out
     # for this reason we will find the precise max scale and max traslation that won't cause this behaviour
     # and iteratively we will change the angle of the rotation, until all the first 4 keypoints are present in the image
-    max_affine_scale = max_centered_scale(w, h, keypoints[0:4], margin_px=10.0, max_scale=1.15)
+    max_affine_scale = max_centered_scale(w, h, keypoints[0:4], margin_px=10.0, max_scale=1.1)
     affine_scale = random.uniform(1.0, max_affine_scale)
 
     (min_x_trasl, max_x_trasl), (min_y_trasl, max_y_trasl) = find_max_traslation(w, h, keypoints[0:4], affine_scale, margin_px=10.0)
@@ -422,24 +473,26 @@ def cluster_data_augmentation(image_name: str, n_images_to_generate: int) -> Non
             keypoints=keypoints
         )
 
+        # WARNING: if in the transformation uses remove_invisible=False, and cv2.BORDER_REFLECT
+        # we can have a max of 9 * number of expected keypoints, because we have the reflection in every angle
+        # and the keypoints that should have a visibility of 0, do not have it
+        # we have to do some cleaning
+        cleaned_keypoints, result = clean_keypoints(new_width, new_height, augmentations["keypoints"])
+
         # check if the trasformation caused to have more bboxes, more than 8 keypoints or the first 4 keypoints to be cutted out from the image
-        if len(augmentations["bboxes"]) > 1 or not are_keypoints_valid(new_width, new_height, augmentations["keypoints"]):
+        if len(augmentations["bboxes"]) > 1 or not result:
             angle_limit = (angle_limit[0] + ANGLE_STEP, angle_limit[1] - ANGLE_STEP) # reduce the angle limit interval
             if(angle_limit[0] > 0.0 or angle_limit[1] < 0.0):
                 # it means there isn't a possible valid interval, and so we should go on
-                # but it shouldn't be possible, because if the angle is 0.0, scale and translation do not cause 4 first keypoints to be cutted out 
-                print(f"WARNING: unable to apply data augmentation for {image_names[index]}")
+                # (it might happen because the reflection cause to have more keypoints)
+                print(f"WARNING: unable to apply data augmentation for {image_name}")
                 iteration += 1
                 continue
             else:
                 # redo the iteration
                 continue
 
-        # WARNING: if in the transformation we use remove_invisible=False, and some transformed keypoints are cutted out from the image,
-        # Albumentations will keep them, but it won't change the x, y, v to 0, 0, 0 (the coordinates will be outside the image)
-        fixed_keypoints = fix_keypoints(new_width, new_height, augmentations["keypoints"])
-
-        save_augmented_data(image_name, augmentations["image"], augmentations["bboxes"][0], fixed_keypoints)
+        save_augmented_data(image_name, augmentations["image"], augmentations["bboxes"][0], cleaned_keypoints)
 
         iteration += 1
 
