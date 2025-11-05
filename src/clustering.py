@@ -239,6 +239,10 @@ def execute_clustering(dataset: str) -> None:
         print(f"Clustering for {dataset}...")
         output_path = ADDED_CLUSTERING_DIRECTORY
         clustering(output_path, FEATURES_DIRECTORY, ADDED_FEATURES_DIRECTORY)
+    elif dataset == "AUGMENTED":
+        print(f"Clustering for {dataset}...")
+        output_path = AUGMENTED_CLUSTERING_DIRECTORY
+        clustering(output_path, AUGMENTED_FEATURES_DIRECTORY)
     else:
         print(f"Error: {dataset} is not a valid dataset for clustering")
         sys.exit(1)

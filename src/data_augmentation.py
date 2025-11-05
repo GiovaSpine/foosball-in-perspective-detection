@@ -148,6 +148,7 @@ def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_
 
     # save the image
     cv2.imwrite(augmented_image_path, augmented_image)
+    print(f"Saved augmented image in {augmented_image_path}")
 
 # =============================================================================
 
@@ -275,37 +276,6 @@ def find_max_traslation(width: int, height: int, keypoints: list, affine_scale: 
     return (-new_min_x + margin_px, max_trasl_x - margin_px), (-new_min_y + margin_px, max_trasl_y - margin_px)
 
 
-def are_keypoints_valid(width: int, height: int, keypoints: list) -> bool:
-    '''
-
-    Returns:
-    bool: True if the keypoints are valid, False otherwise
-    '''
-    if len(keypoints) != 8:
-        return False
-    
-    # let's check the first 4 keypoints
-    for x, y, _ in keypoints[0:4]:
-        if x < 0 or x >= width or y < 0 or y >= height:
-            return False
-        
-    return True
-
-
-def fix_keypoints(width: int, height: int, keypoints: list) -> list:
-    '''
-    '''
-    # we know that the first 4 keypoints are already valid
-    fixed = keypoints[0:4]
-    for x, y, v in keypoints[4:]:
-        if x < 0 or x >= width or y < 0 or y >= height:
-            v = 0   # mark as not visible
-            x = 0.0
-            y = 0.0
-        fixed.append((x, y, v))
-    return fixed
-
-
 def clean_keypoints(width: int, height: int, keypoints: list) -> tuple:
     '''
     '''
@@ -339,8 +309,8 @@ def clean_keypoints(width: int, height: int, keypoints: list) -> tuple:
         # there are some problems for the central piece, that we can solve by chaingin the angle
         return [], False
     elif valid_pieces > 1:
-        # ABSURD: it shouldn't happen to have more valid pieces
-        print("Error: more valid_pieces > 1; it shouldn't be possible")
+        # It can happen in images where the foosball table is small to appear completly in the reflection
+        print("Error: more valid_pieces > 1 (complete foosball table clone in the reflection)")
         return [], False
         
     # we might already fix the 4 last keypoints
@@ -511,21 +481,28 @@ MAX_DIFFERENCE = 20
 # max number of images generable with data augmentation from a single image
 # it's important because if we have a cluster with a few image, and a high max_count
 # we shouldn't generate to many images from the few one (we might introduce a bias)
-MAX_AUG_PER_IMAGE = 3
+MAX_AUG_PER_IMAGE = 2
 
 # ideality is a number from 0.0 to 1.0, that limits the amount of images to generate
-# we want to limit the images to generate for clustering because increasing the number of a cluster for balance, might change the balance for other clusters
-MIN_IDEALITY = 0.4
-MAX_IDEALITY = 1.0
+# we want to limit the images generated because increasing the number of a cluster for balance, might change the balance for other clusters
+# [min_ideality, max_ideality] is the interval where we will take a random ideality, and for every k we reduce this interval
+# MIN_IDEALITY_END is the last value (for the last k) of min_ideality
+# IDEALITY_STEP is the amount used for reducing
+min_ideality = 0.6
+MIN_IDEALITY_END = 0.2
+max_ideality = 1.0
+IDEALITY_STEP = (min_ideality - MIN_IDEALITY_END) / ((MAX_N_CLUSTERS - MIN_N_CLUSTERS) / 3)  # /3 because we move in 3
 
-for k in range(MIN_N_CLUSTERS, MAX_N_CLUSTERS + 1):
+for k in range(MAX_N_CLUSTERS, MIN_N_CLUSTERS - 1, -3):
+    # we don't consider every k, because the difference from a k to the next might be to small, so we move in 3
+
     index = k - MIN_N_CLUSTERS  # to access all_clustering_labels we need this index
     
     cluster_counts = clustering_data[k]["cluster_counts"]
     max_count = max(cluster_counts)
 
     # we will use this array to limt the amount of images to generate
-    ideality_array = np.random.uniform(MIN_IDEALITY, MAX_IDEALITY, k)
+    ideality_array = np.random.uniform(min_ideality, max_ideality, k)
 
     for cluster_id in range(k):
         # let's see how big is the difference in number of images
@@ -554,5 +531,6 @@ for k in range(MIN_N_CLUSTERS, MAX_N_CLUSTERS + 1):
             for i in range(len(image_names)):
                 cluster_data_augmentation(image_names[i], distribution[i])
     
-    # stop for testing
-    exit(1)
+    # update the ideality array
+    min_ideality -= IDEALITY_STEP
+    max_ideality -= IDEALITY_STEP

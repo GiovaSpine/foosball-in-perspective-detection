@@ -41,6 +41,9 @@ DEFAULT_CLUSTERING_DIRECTORY = f"{PROJECT_DIRECTORY}/results/clustering/default-
 # absolute path where we will save the results of KMeans on the data, where there are added some images
 ADDED_CLUSTERING_DIRECTORY = f"{PROJECT_DIRECTORY}/results/clustering/added-clustering"
 
+# absolute path where we will save the results of KMeans on the augmented data
+AUGMENTED_CLUSTERING_DIRECTORY = f"{PROJECT_DIRECTORY}/results/clustering/augmented-clustering"
+
 # absolute path where we will save the images of cluster's counts for default clustering
 DEFAULT_CLUSTER_COUNTS_IMAGES_DIRECTORY = f"{PROJECT_DIRECTORY}/results/images/default-cluster-counts-images"
 
@@ -52,6 +55,12 @@ ADDED_CLUSTER_COUNTS_IMAGES_DIRECTORY = f"{PROJECT_DIRECTORY}/results/images/add
 
 # absolute path where we will save the images of some samples of a cluster for the added clustering
 ADDED_CLUSTER_IMAGES_DIRECTORY = f"{PROJECT_DIRECTORY}/results/images/added-cluster-images"
+
+# absolute path where we will save the images of cluster's counts for the added clustering
+AUGMENTED_CLUSTER_COUNTS_IMAGES_DIRECTORY = f"{PROJECT_DIRECTORY}/results/images/augmented-cluster-counts-images"
+
+# absolute path where we will save the images of some samples of a cluster for the added clustering
+AUGMENTED_CLUSTER_IMAGES_DIRECTORY = f"{PROJECT_DIRECTORY}/results/images/augmented-cluster-images"
 
 # absolute path where we will save the dataframe of the data/images
 IMAGES_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/images_dataframe.parquet"
