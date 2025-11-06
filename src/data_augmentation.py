@@ -325,7 +325,46 @@ def clean_keypoints(width: int, height: int, keypoints: list) -> tuple:
         fixed.append((x, y, v))
 
     return fixed, True
+
+
+def get_n_images_to_remove_mask(n_images_to_remove: int, all_cluster_counts: list) -> list:
+    '''
+    '''
+     # the imbalance_mask contains a weight for each cluster, that says how important to remove its images
+    # (0.0 do not remove images, 1.0 remove a lot of images)
+    imbalance_mask = []
+    for cluster_row in all_cluster_counts:
+        k = len(cluster_row)
+        N = sum(cluster_row)
+        mean_val = N / k
+        
+        # simil normalization to TwoSlopeNorm
+        aux = []
+        for value in cluster_row:
+            if value > mean_val:
+                norm_val = (value - mean_val) / mean_val   # above the average
+            else:
+                norm_val = 0.0
+            aux.append(norm_val)
+        imbalance_mask.append(aux)
+
+    weight_sum = 0.0
+    for row in imbalance_mask:
+        weight_sum += sum(row)
+
+    n_images_to_remove_mask = []
+
+    for row in imbalance_mask:
+        aux = []
+        for element in row:
+            if element > 0:
+                aux.append(round(element * (n_images_to_remove / weight_sum)))
+            else:
+                aux.append(0)
+        n_images_to_remove_mask.append(aux)
     
+    return n_images_to_remove_mask
+
 
 # =============================================================================
 
@@ -472,65 +511,147 @@ def cluster_data_augmentation(image_name: str, n_images_to_generate: int) -> Non
 
 # MAIN LOOP FOR CLUSTERING DATA AUGMENTATION
 
-clustering_data = load_clustering_data(ADDED_CLUSTERING_DIRECTORY)
-all_clustering_labels = load_all_clustering_label(ADDED_CLUSTERING_DIRECTORY)
+def clustering_data_augmentation():
+    '''
+    Generates new images from the default + added dataset to balance the clusters.
+    For some k, it looks for the cluster with the max amount of elements, and based on that number, decided how many
+    images to generate per cluster.
+    It doesn't iteretate for every k, since balancing one might unbalance another.
+    It uses a small tranformation, that doesn't change drastically the image, for the data augmentation because we want
+    the new images to fall in the same cluster where they were generated.
+    Saves the images and labels in the augmented-data folder
+    '''
+    clustering_data = load_clustering_data(ADDED_CLUSTERING_DIRECTORY)
+    all_clustering_labels = load_all_clustering_label(ADDED_CLUSTERING_DIRECTORY)
 
-# max difference, between max_count and the count of a cluster, that we need to surpass to have data augmentation
-MAX_DIFFERENCE = 20
+    # we don't consider every k, because the difference from a k to the next might be to small, so we move in K_STEP
+    # (balancing a K might unbalance another)
+    K_STEP = 3
 
-# max number of images generable with data augmentation from a single image
-# it's important because if we have a cluster with a few image, and a high max_count
-# we shouldn't generate to many images from the few one (we might introduce a bias)
-MAX_AUG_PER_IMAGE = 2
+    # max difference, between max_count and the count of a cluster, that we need to surpass to have data augmentation
+    MAX_DIFFERENCE = 20
 
-# ideality is a number from 0.0 to 1.0, that limits the amount of images to generate
-# we want to limit the images generated because increasing the number of a cluster for balance, might change the balance for other clusters
-# [min_ideality, max_ideality] is the interval where we will take a random ideality, and for every k we reduce this interval
-# MIN_IDEALITY_END is the last value (for the last k) of min_ideality
-# IDEALITY_STEP is the amount used for reducing
-min_ideality = 0.6
-MIN_IDEALITY_END = 0.2
-max_ideality = 1.0
-IDEALITY_STEP = (min_ideality - MIN_IDEALITY_END) / ((MAX_N_CLUSTERS - MIN_N_CLUSTERS) / 3)  # /3 because we move in 3
+    # max number of images generable with data augmentation from a single image
+    # it's important because if we have a cluster with a few image, and a high max_count
+    # we shouldn't generate to many images from the few one (we might introduce a bias)
+    MAX_AUG_PER_IMAGE = 2
 
-for k in range(MAX_N_CLUSTERS, MIN_N_CLUSTERS - 1, -3):
-    # we don't consider every k, because the difference from a k to the next might be to small, so we move in 3
+    # ideality is a number from 0.0 to 1.0, that limits the amount of images to generate
+    # we want to limit the images generated because increasing the number of a cluster for balance, might change the balance for other clusters
+    # [min_ideality, max_ideality] is the interval where we will take a random ideality, and for every k we reduce this interval
+    # MIN_IDEALITY_END is the last value (for the last k) of min_ideality
+    # IDEALITY_STEP is the amount used for reducing
+    min_ideality = 0.6
+    MIN_IDEALITY_END = 0.2
+    max_ideality = 1.0
+    IDEALITY_STEP = (min_ideality - MIN_IDEALITY_END) / ((MAX_N_CLUSTERS - MIN_N_CLUSTERS) / K_STEP)  # /K_STEP because we move in K_STEP
 
-    index = k - MIN_N_CLUSTERS  # to access all_clustering_labels we need this index
+    for k in range(MAX_N_CLUSTERS, MIN_N_CLUSTERS - 1, -K_STEP):
+        index = k - MIN_N_CLUSTERS  # to access all_clustering_labels we need this index
+        
+        cluster_counts = clustering_data[k]["cluster_counts"]
+        max_count = max(cluster_counts)
+
+        # we will use this array to limt the amount of images to generate
+        ideality_array = np.random.uniform(min_ideality, max_ideality, k)
+
+        for cluster_id in range(k):
+            # let's see how big is the difference in number of images
+            n_images_diff = max_count - cluster_counts[cluster_id]
+            if  n_images_diff > MAX_DIFFERENCE:
+                # we apply some data augmentation
+
+                n_images_to_generate = min(cluster_counts[cluster_id] * MAX_AUG_PER_IMAGE, max_count - MAX_DIFFERENCE - cluster_counts[cluster_id])
+                n_images_to_generate = round(n_images_to_generate * ideality_array[cluster_id])  # reduce the amount of images to generate
+                
+                # let's grab the image names that belongs in this cluster
+                image_names = []
+                for image, labels in all_clustering_labels.items():
+                    if labels[index] == cluster_id: image_names.append(image)
+
+                if len(image_names) > n_images_to_generate:
+                    # it means that we have to grab randomly n_images_to_generate images and generate one image from each
+                    np.random.shuffle(image_names)
+                    image_names = image_names[0:n_images_to_generate]
+                    distribution = [1] * n_images_to_generate  # distribution says how many augmented images has to generate each image
+                else:
+                    # it means that some images have to generate more than one image
+                    distribution = distribute_evenly(len(image_names), n_images_to_generate)  # distribution says how many augmented images has to generate each image
+
+                print(f"For k={k}, cluster_id={cluster_id}, we generate {n_images_to_generate} images")
+                for i in range(len(image_names)):
+                    cluster_data_augmentation(image_names[i], distribution[i])
+        
+        # update the ideality array
+        min_ideality -= IDEALITY_STEP
+        max_ideality -= IDEALITY_STEP
+
+
+def remove_some_clustering_augmented_data():
+    '''
+    After clustering the augmented data generated for the clusters balance, Removes some augmented images to balance even more.
+    '''
+
+    clustering_data = load_clustering_data(AUGMENTED_CLUSTERING_DIRECTORY)
+    all_clustering_labels = load_all_clustering_label(AUGMENTED_CLUSTERING_DIRECTORY)
+
+    # the amount of augemented images to remove in totale
+    N_IMAGES_TO_REMOVE = 500
+
+    all_cluster_counts = []
+    for i in range(MIN_N_CLUSTERS, MAX_N_CLUSTERS):
+        all_cluster_counts.append(clustering_data[i]["cluster_counts"])
     
-    cluster_counts = clustering_data[k]["cluster_counts"]
-    max_count = max(cluster_counts)
+    # n_images_to_remove_mask says for each (k, cluster_id) the amount of images to remove
+    # the sum of all those images is around N_IMAGES_TO_REMOVE
+    n_images_to_remove_mask = get_n_images_to_remove_mask(N_IMAGES_TO_REMOVE, all_cluster_counts)
 
-    # we will use this array to limt the amount of images to generate
-    ideality_array = np.random.uniform(min_ideality, max_ideality, k)
-
-    for cluster_id in range(k):
-        # let's see how big is the difference in number of images
-        n_images_diff = max_count - cluster_counts[cluster_id]
-        if  n_images_diff > MAX_DIFFERENCE:
-            # we apply some data augmentation
-
-            n_images_to_generate = min(cluster_counts[cluster_id] * MAX_AUG_PER_IMAGE, max_count - MAX_DIFFERENCE - cluster_counts[cluster_id])
-            n_images_to_generate = round(n_images_to_generate * ideality_array[cluster_id])  # reduce the amount of images to generate
-            
-            # let's grab the image names that belongs in this cluster
-            image_names = []
-            for image, labels in all_clustering_labels.items():
-                if labels[index] == cluster_id: image_names.append(image)
-
-            if len(image_names) > n_images_to_generate:
-                # it means that we have to grab randomly n_images_to_generate images and generate one image from each
-                np.random.shuffle(image_names)
-                image_names = image_names[0:n_images_to_generate]
-                distribution = [1] * n_images_to_generate  # distribution says how many augmented images has to generate each image
-            else:
-                # it means that some images have to generate more than one image
-                distribution = distribute_evenly(len(image_names), n_images_to_generate)  # distribution says how many augmented images has to generate each image
-
-            print(f"For k={k}, cluster_id={cluster_id}, we generate {n_images_to_generate} images")
-            for i in range(len(image_names)):
-                cluster_data_augmentation(image_names[i], distribution[i])
+    # let's find n_to_remove_in_cluster augmented images
+    # we don't remove original images
+    aug_image_prefix = get_augmented_image_name("").split("_", 1)[0]
     
-    # update the ideality array
-    min_ideality -= IDEALITY_STEP
-    max_ideality -= IDEALITY_STEP
+    n_removed = 0  # the counter that counts the actually removed
+    for k in range(MIN_N_CLUSTERS, MAX_N_CLUSTERS):
+        index = k - MIN_N_CLUSTERS
+
+        for cluster_id in range(k):
+            # the amount of images to remove for this cluster:
+            n_to_remove_in_cluster = n_images_to_remove_mask[index][cluster_id]
+
+            if n_to_remove_in_cluster == 0:
+                # we don't have images to remove
+                continue
+
+            count = 0
+            for image_name, labels in all_clustering_labels.items():
+                # if the image belong in the cluster and is an augmented image
+                if labels[index] == cluster_id and image_name.split("_", 1)[0] == aug_image_prefix:
+
+                    image_path = find_image_path(image_name, AUGMENTED_IMAGES_DATA_DIRECTORY)
+                    label_path = find_label_path(image_name, AUGMENTED_LABELS_DIRECTORY)
+
+                    if image_path == None or label_path == None:
+                        print(f"Warning: can't delete {image_name}: unable to find path (maybe it was already deleted)")
+                        continue
+                    else:
+                        # we remove the image
+                        if os.path.isfile(image_path) and os.path.isfile(label_path):  # just to be safe
+                            os.remove(image_path)
+                            os.remove(label_path)
+                            count += 1
+                            n_removed += 1
+                            print(f"Removed the image: {image_name}")
+                        else:
+                            print(f"Warning: can't delete {image_name}: the image or the labels are not files")
+
+                    # update the counter of removed images  
+                    if count >= n_to_remove_in_cluster:
+                        break
+
+            if n_to_remove_in_cluster != count:
+                print(f"Warning: can't delete {n_to_remove_in_cluster} in (k={k}, id={cluster_id}). There aren't enough augmented images")
+
+    print(f"Removed {n_removed} images in total")        
+
+
+remove_some_clustering_augmented_data()

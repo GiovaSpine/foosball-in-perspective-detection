@@ -76,3 +76,21 @@ def find_image_path(image_name: str, *paths_to_look: str) -> str | None:
                     return candidate_path
     return None
 
+
+def find_label_path(label_name: str, *paths_to_look: str) -> str | None:
+    '''
+    Find the complete path given the image name without extension.
+    
+    Parameters:
+        image_name (str): The name of the image without extension
+        paths_to_look: One or more paths to search the image
+    
+    Returns:
+        str o None: Complete path if found, None otherwise
+    '''
+    for path in paths_to_look:
+        candidate_path = os.path.join(path, label_name + LABELS_EXTENSION)
+        if os.path.exists(candidate_path):
+            return candidate_path
+    return None
+
