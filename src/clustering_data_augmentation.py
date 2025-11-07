@@ -1,53 +1,35 @@
 
-# python file for data augmentation
-
-# by looking at the data and labels profiling, we see that we need more:
-# - images with an angle between [0, 80], and [125, 175]
-# - images with a center that is not close to (0.53, 0.68)
-# - images that are squares and vertical rectangles
-# - images with low resolution
-# - darker images
-# - satureted images
-# - images where some keypoints of the upper rectangle have a visibility of 1
-# - images where some keypoints of the lower rectangle have a visibility of 0 and 2
-# - images where the bounding box covers less that 20%, above 85%, around 37% and 70% of the image
-
-# by looking at the clusters, we see that we need more:
-# - weirdly rotated images
-# - high contrast images
-# - vertical rotated images
-
-# by looking directly at the images, we see that we need more:
-# - images where there are some obstacles that cover the play area
+# python file for clustering data augmentation
+# we apply some minor transformation to obtain new images that should balance the cluster counts
+# Minor transformation because the new images have to end up in the same cluster, where they were generated
 
 import os
 import random
-from typing import NamedTuple, List, Tuple
 import albumentations as A 
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 from utility import *
 from config import *
-
 
 
 # LOADING AND SAVING
 
 def labels_loading(image_name: str, width: int=0, height: int=0, denormalize: str="none") -> tuple:
     '''
-    Loads the labels from an image.
-    If denormalize="none", the bounding box and the keypoints will stay normalized, according to the COCO Keypoints 1.0 format.
-    If denormalize != "none", the function needs width and height to denormalize either the bounding box, the keypoints or both.
-    denormalize can be {none, bbox, keypoints, both}
+    Loads the labels, in the COCO Keypoints 1.0 format, of an image.
+    If denormalize="none", the bounding box and the keypoints will stay normalized, according to the
+    format.
+    If denormalize != "none", the function needs width and height to denormalize either the bounding
+    box, the keypoints or both, according to the argument's value, that can be {bbox, keypoints, both}
 
     Parameters:
     image_names (str): The image name without extension
     width (int): The width of the image, needed if we want to denormalize
     height (int): The height of the image, needed if we want to denormalize
-    denormalize (str): Specifies if the function has to denormalize the labels. It can be "none" if no denormalization is needed,
-                       "bbox" if only the bbox has to be denormalized, "keypoints" if only the keypoints have to be denormalized,
-                        or "both" if both need to be denormalized
+    denormalize (str): Specifies if the function has to denormalize the labels.
+                       It can be "none" if no denormalization is needed, "bbox" if only the bbox has to
+                       be denormalized, "keypoints" if only the keypoints have to be denormalized, or
+                       "both" if both need to be denormalized
 
     Returns:
     tuple: The labels in the form bbox, keypoints
@@ -98,7 +80,8 @@ def labels_loading(image_name: str, width: int=0, height: int=0, denormalize: st
 
 
 def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_bbox: list, augmented_kps: list) -> None:
-
+    '''
+    '''
     # filenames and paths
     augmented_image_name = get_augmented_image_name(image_name)
     augmented_labels_name = os.path.splitext(augmented_image_name)[0] + LABELS_EXTENSION
@@ -152,15 +135,17 @@ def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_
 
 # =============================================================================
 
-# UTILITY FUNCTIONS
+# LOCAL UTILITY FUNCTIONS
 
 def distribute_evenly(A: int, B: int) -> list:
     '''
-    Creates a list of uniform A non negative integers whose sum is B.
+    Creates a list of uniform A non negative
+    integers whose sum is B.
 
     Parameters:
     A (int): The length of the list to generate
-    B (int): The valuse that has to be the sum of the list
+    B (int): The valuse that has to be the sum
+             of the list
     
     Returns:
         list: The list of uniform values
@@ -176,7 +161,8 @@ def distribute_evenly(A: int, B: int) -> list:
 
 def max_centered_scale(width: int, height: int, keypoints: list, margin_px: float = 0.0, max_scale: float = 1.2) -> float:
     '''
-    Calculates the max scale possible to apply in the center of the image, so that all the resulting keypoints are inside the image, with a optional margin.
+    Calculates the max scale possible to apply in the center of the image, so that all the resulting keypoints are inside
+    the image, with a optional margin.
     To limit the scale there is the max_scale parameter.
 
     Paramters:
@@ -241,7 +227,8 @@ def max_centered_scale(width: int, height: int, keypoints: list, margin_px: floa
         
 def find_max_traslation(width: int, height: int, keypoints: list, affine_scale: float, margin_px=5.0) -> tuple:
     '''
-    Calculates the max traslation possible to apply on the scaled image, so that all the resulting keypoints are inside the image, with a optional margin.
+    Calculates the max traslation possible to apply on the scaled image, so that all the resulting keypoints
+    are inside the image, with a optional margin.
 
     Paramters:
     width (int): The width of the image

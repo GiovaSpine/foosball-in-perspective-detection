@@ -208,11 +208,9 @@ def save_dataframe(df_to_generate: str, df_version: str) -> None:
     None
     '''
     if df_to_generate not in ["IMAGES", "LABELS"]:
-        print(f"Error: not valid df_to_generate: {df_to_generate} not in  [IMAGES, LABELS]")
-        return
+        raise ValueError(f"Error: not valid df_to_generate: {df_to_generate} not in  [IMAGES, LABELS]")
     if df_version not in ["DEFAULT", "ADDED", "AUGMENTED"]:
-        print(f"Error: not valid df_versione: {df_version} not in  [DEFAULT, ADDED, AUGMENTED]")
-        return
+        raise ValueError(f"Error: not valid df_versione: {df_version} not in  [DEFAULT, ADDED, AUGMENTED]")
 
     print(f"Loading dataframe for {df_to_generate}, with the {df_version} dataset...")
 

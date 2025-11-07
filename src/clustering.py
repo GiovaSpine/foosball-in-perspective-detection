@@ -178,11 +178,6 @@ def clustering(clustering_path: str, *feature_paths: str) -> None:
         kmeans = KMeans(n_clusters=k, init="k-means++", n_init=10, random_state=42)
         kmeans.fit(X)
 
-        # print the results on the terminal
-        print("For k =", k, "we have the following results:")
-        print("- Inertia:", kmeans.inertia_)
-        print("- Silhoutte Score:", silhouette_score(X, kmeans.labels_))
-
         # save the labels for this k (n_clusters)
         for image_name, label in zip(image_names, kmeans.labels_):
             all_labels[image_name].append(int(label))
@@ -192,6 +187,12 @@ def clustering(clustering_path: str, *feature_paths: str) -> None:
 
         # collect some samples for every clusters
         samples, centroids = get_samples_and_centroids(k, kmeans, X, image_names, get_number_of_samples(k))
+
+        # print the results on the terminal
+        print("For k =", k, "we have the following results:")
+        print("- Inertia:", kmeans.inertia_)
+        print("- Silhoutte Score:", silhouette_score(X, kmeans.labels_))
+        print("- Cluster counts:", cluster_counts)
 
         # save on file
         data_to_save = {
@@ -213,6 +214,8 @@ def clustering(clustering_path: str, *feature_paths: str) -> None:
     # we need those to know on which image to operate if we see any issues with the clustering
     with open(os.path.join(clustering_path, ALL_CLUSTERING_LABELS_FILENAME), "w") as f:
         json.dump(all_labels, f, indent=4)
+    
+    print(f"{ALL_CLUSTERING_LABELS_FILENAME} saved in:", os.path.join(clustering_path, ALL_CLUSTERING_LABELS_FILENAME), "\n")
 
     print(f"Done clustering for {feature_paths}\n")
 
@@ -221,31 +224,25 @@ def clustering(clustering_path: str, *feature_paths: str) -> None:
 
 def execute_clustering(dataset: str) -> None:
     '''
-    Starts the clustering fot the desired dataset.
+    Starts the clustering for the desired dataset.
     
     Parameters:
-    dataset: {DEFAULT, ADDED}
+    dataset: {DEFAULT, ADDED, AUGMENTED}
 
     Returns:
     None
     '''
-    dataset = dataset.upper()
+    if dataset not in ["DEFAULT", "ADDED", "AUGMENTED"]:
+        raise ValueError(f"Error: not valid dataset: {dataset} not in  [DEFAULT, ADDED, AUGMENTED]")
+    
+    print(f"Clustering for the dataset {dataset}...")
 
     if dataset == "DEFAULT":
-        print(f"Clustering for {dataset}...")
-        output_path = DEFAULT_CLUSTERING_DIRECTORY
-        clustering(output_path, FEATURES_DIRECTORY)
+        clustering(DEFAULT_CLUSTERING_DIRECTORY, FEATURES_DIRECTORY)
     elif dataset == "ADDED":
-        print(f"Clustering for {dataset}...")
-        output_path = ADDED_CLUSTERING_DIRECTORY
-        clustering(output_path, FEATURES_DIRECTORY, ADDED_FEATURES_DIRECTORY)
-    elif dataset == "AUGMENTED":
-        print(f"Clustering for {dataset}...")
-        output_path = AUGMENTED_CLUSTERING_DIRECTORY
-        clustering(output_path, AUGMENTED_FEATURES_DIRECTORY)
+        clustering(ADDED_CLUSTERING_DIRECTORY, FEATURES_DIRECTORY, ADDED_FEATURES_DIRECTORY)
     else:
-        print(f"Error: {dataset} is not a valid dataset for clustering")
-        sys.exit(1)
+        clustering(AUGMENTED_CLUSTERING_DIRECTORY, AUGMENTED_FEATURES_DIRECTORY)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -254,7 +251,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "dataset",
         type=str,
-        help="The dataset of features (DEFAULT, ADDED)",
+        choices=["DEFAULT", "ADDED", "AUGMENTED"],
+        help="The dataset of features (DEFAULT, ADDED, AUGMENTED)",
     )
     args = parser.parse_args()
     execute_clustering(args.dataset)

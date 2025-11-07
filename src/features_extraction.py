@@ -1,20 +1,10 @@
 import os
+import argparse
 import torch
 from torchvision import models
 from image_processing import process_image_for_ViT
 from config import *
 
-
-# device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {device}")
-
-
-# loading of the pretrained model
-vit_model = models.vit_b_16(pretrained=True)
-vit_model.eval()  # validation mode
-vit_model.heads = torch.nn.Identity()  # removes the classification head
-vit_model.to(device)
 
 
 # feature extraction
@@ -58,5 +48,53 @@ def extract_features(images_path: str, features_path: str) -> None:
 
     print(f"Done extracting features for {images_path}")
 
+# =============================================================================
 
-extract_features(AUGMENTED_IMAGES_DATA_DIRECTORY, AUGMENTED_FEATURES_DIRECTORY)
+def execute_features_extraction(dataset: str) -> None:
+    '''
+    Starts the features extraction for the desired dataset.
+    
+    Parameters:
+    dataset: {DEFAULT, ADDED, AUGMENTED}
+
+    Returns:
+    None
+    '''
+    # device
+    global device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    # loading of the pretrained model
+    global vit_model
+    vit_model = models.vit_b_16(pretrained=True)
+    vit_model.eval()  # validation mode
+    vit_model.heads = torch.nn.Identity()  # removes the classification head
+    vit_model.to(device)
+    
+    if dataset not in ["DEFAULT", "ADDED", "AUGMENTED"]:
+        raise ValueError(f"Error: not valid dataset: {dataset} not in  [DEFAULT, ADDED, AUGMENTED]")
+    
+    print(f"Extracting features for the dataset {dataset}...")
+
+    if dataset == "DEFAULT":
+        extract_features(IMAGES_DATA_DIRECTORY, FEATURES_DIRECTORY)
+    elif dataset == "ADDED":
+        extract_features(IMAGES_DATA_DIRECTORY, FEATURES_DIRECTORY)
+        extract_features(ADDED_IMAGES_DATA_DIRECTORY, ADDED_FEATURES_DIRECTORY)
+    else:
+        extract_features(AUGMENTED_IMAGES_DATA_DIRECTORY, AUGMENTED_FEATURES_DIRECTORY)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Starts the clustering fot the desired dataset."
+    )
+    parser.add_argument(
+        "dataset",
+        type=str,
+        choices=["DEFAULT", "ADDED", "AUGMENTED"],
+        help="The dataset of images (DEFAULT, ADDED, AUGMENTED)",
+    )
+    args = parser.parse_args()
+    execute_features_extraction(args.dataset)
