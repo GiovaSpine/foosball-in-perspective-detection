@@ -62,11 +62,23 @@ AUGMENTED_CLUSTER_COUNTS_IMAGES_DIRECTORY = f"{PROJECT_DIRECTORY}/results/images
 # absolute path where we will save the images of some samples of a cluster for the added clustering
 AUGMENTED_CLUSTER_IMAGES_DIRECTORY = f"{PROJECT_DIRECTORY}/results/images/augmented-cluster-images"
 
-# absolute path where we will save the dataframe of the data/images
-IMAGES_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/images_dataframe.parquet"
+# absolute path where we will save the dataframe of the data/images for the default dataset
+DEFAULT_IMAGES_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/default_images_dataframe.parquet"
 
-# absolute path where we will save the dataframe of the labels/annotations
-LABELS_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/labels_dataframe.parquet"
+# absolute path where we will save the dataframe of the labels/annotations for the default dataset
+DEFAULT_LABELS_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/default_labels_dataframe.parquet"
+
+# absolute path where we will save the dataframe of the data/images for the added dataset
+ADDED_IMAGES_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/added_images_dataframe.parquet"
+
+# absolute path where we will save the dataframe of the labels/annotations for the added dataset
+ADDED_LABELS_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/added_labels_dataframe.parquet"
+
+# absolute path where we will save the dataframe of the data/images for the augmented dataset
+AUGMENTED_IMAGES_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/augmented_images_dataframe.parquet"
+
+# absolute path where we will save the dataframe of the labels/annotations for the augmented dataset
+AUGMENTED_LABELS_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/augmented_labels_dataframe.parquet"
 
 # =========================================================
 

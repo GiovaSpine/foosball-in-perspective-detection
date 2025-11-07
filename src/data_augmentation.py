@@ -651,7 +651,4 @@ def remove_some_clustering_augmented_data():
             if n_to_remove_in_cluster != count:
                 print(f"Warning: can't delete {n_to_remove_in_cluster} in (k={k}, id={cluster_id}). There aren't enough augmented images")
 
-    print(f"Removed {n_removed} images in total")        
-
-
-remove_some_clustering_augmented_data()
+    print(f"Removed {n_removed} images in total")
