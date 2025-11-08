@@ -14,71 +14,6 @@ from config import *
 
 # LOADING AND SAVING
 
-def labels_loading(image_name: str, width: int=0, height: int=0, denormalize: str="none") -> tuple:
-    '''
-    Loads the labels, in the COCO Keypoints 1.0 format, of an image.
-    If denormalize="none", the bounding box and the keypoints will stay normalized, according to the
-    format.
-    If denormalize != "none", the function needs width and height to denormalize either the bounding
-    box, the keypoints or both, according to the argument's value, that can be {bbox, keypoints, both}
-
-    Parameters:
-    image_names (str): The image name without extension
-    width (int): The width of the image, needed if we want to denormalize
-    height (int): The height of the image, needed if we want to denormalize
-    denormalize (str): Specifies if the function has to denormalize the labels.
-                       It can be "none" if no denormalization is needed, "bbox" if only the bbox has to
-                       be denormalized, "keypoints" if only the keypoints have to be denormalized, or
-                       "both" if both need to be denormalized
-
-    Returns:
-    tuple: The labels in the form bbox, keypoints
-    '''
-    if denormalize not in ["none", "bbox", "keypoints", "both"]:
-        raise ValueError(f"Error: not valid 'denormalize': {denormalize} not in ['none', 'bbox', 'keypoints', 'both']")
-    
-    if denormalize != "none" and (width <= 0 or height <= 0):
-        raise ValueError(f"Error: not valid 'height', 'width', can't denormalize")
-    
-    bbox_mul_x = 1.0
-    bbox_mul_y = 1.0
-    kps_mul_x = 1.0
-    kps_mul_y = 1.0
-    
-    if denormalize == "bbox":
-        bbox_mul_x = width
-        bbox_mul_y = height
-    if denormalize == "keypoints":
-        kps_mul_x = width
-        kps_mul_y = height
-    if denormalize == "both":
-        bbox_mul_x = width
-        bbox_mul_y = height
-        kps_mul_x = width
-        kps_mul_y = height     
-
-    # we need to look both at LABELS_DIRECTORY and ADDED_LABELS_DIRECTORY
-    try:
-        with open(os.path.join(LABELS_DIRECTORY, image_name + LABELS_EXTENSION), "r") as f:
-            labels = f.read().strip().split()
-    except Exception:
-        try:
-            with open(os.path.join(ADDED_LABELS_DIRECTORY, image_name + LABELS_EXTENSION), "r") as f:
-                labels = f.read().strip().split()
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                f"Label {image_name + LABELS_EXTENSION} not found in {LABELS_DIRECTORY} or {ADDED_LABELS_DIRECTORY}"
-            )
-        
-    # (0 for the class, 4 numbers for the bbox and the rest for the keypoints)
-    bbox = [float(labels[1]) * bbox_mul_x, float(labels[2]) * bbox_mul_y, float(labels[3]) * bbox_mul_x, float(labels[4]) * bbox_mul_y]
-    kps = labels[5:]
-    keypoints = [(float(kps[i]) * kps_mul_x, float(kps[i+1]) * kps_mul_y, int(kps[i+2])) for i in range(0, len(kps), 3)]
-
-    return bbox, keypoints
-
-
-
 def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_bbox: list, augmented_kps: list) -> None:
     '''
     '''
@@ -116,6 +51,7 @@ def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_
             print(f"WARNING: not valid augmented keypoints for {image_name}")
     
     h, w = augmented_image.shape[:2]  # we need to normalize the keypoints
+    _, augmented_kps = normalize(w, h, keypoints=augmented_kps)
 
     # save the labels
     with open(augmented_labels_path, "w") as f:
@@ -124,8 +60,8 @@ def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_
             f.write(str(bbox_number) + " ")
         for kp in augmented_kps:
             # normalize the keypoits
-            x = "0" if kp[0] == 0.0 else str(kp[0] / float(w))
-            y = "0" if kp[1] == 0.0 else str(kp[1] / float(h))
+            x = "0" if kp[0] == 0.0 else str(kp[0])
+            y = "0" if kp[1] == 0.0 else str(kp[1])
             v = str(int(kp[2]))
             f.write(f"{x} {y} {v} ")
 
@@ -425,16 +361,17 @@ def cluster_data_augmentation(image_name: str, n_images_to_generate: int) -> Non
     # path loading
     image_path = find_image_path(image_name, IMAGES_DATA_DIRECTORY, ADDED_IMAGES_DATA_DIRECTORY)
     if image_path == None:
-        raise FileNotFoundError(
-            f"Image {image_name} not found in {IMAGES_DATA_DIRECTORY} or {ADDED_IMAGES_DATA_DIRECTORY}"
-        )
+        raise FileNotFoundError(f"Image {image_name} not found in {IMAGES_DATA_DIRECTORY} or {ADDED_IMAGES_DATA_DIRECTORY}")
     image = cv2.imread(image_path)
     h, w = image.shape[:2]
 
     # labels loading
     # Albumentations can work with normalized boundinb boxes, but not with normalized keypoints, so we have to denormalize them
-    bbox, keypoints = labels_loading(image_name, w, h, denormalize="keypoints")
-    
+    label_path = find_label_path(image_name, LABELS_DIRECTORY, ADDED_LABELS_DIRECTORY)
+    if label_path == None:
+        raise FileNotFoundError(f"Image {label_path} not found in {LABELS_DIRECTORY} or {ADDED_LABELS_DIRECTORY}")
+    bbox, keypoints = label_loading(label_path)
+    _, keypoints = denormalize(w, h, keypoints=keypoints)
 
     # when applying a geometric transform (scale, traslation, rotation), we can cause some of the keypoints to be cutted out from the image
     # but we don't want the first 4 keypoints to be cutted out
