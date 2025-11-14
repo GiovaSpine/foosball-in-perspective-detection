@@ -12,63 +12,6 @@ from utility import *
 from config import *
 
 
-# LOADING AND SAVING
-
-def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_bbox: list, augmented_kps: list) -> None:
-    '''
-    '''
-    # filenames and paths
-    augmented_image_name = get_augmented_image_name(image_name)
-    augmented_labels_name = os.path.splitext(augmented_image_name)[0] + LABELS_EXTENSION
-
-    augmented_labels_path = os.path.join(AUGMENTED_LABELS_DIRECTORY, augmented_labels_name)
-    augmented_image_path = os.path.join(AUGMENTED_IMAGES_DATA_DIRECTORY, get_augmented_image_name(image_name))
-
-    # we have to make the label
-    # WARNING: we have a rule: the highest keypoint (lowest y) has to be either the first keypoint or the second
-    # rotating the image can cause this rule to not be respected, so we have to check the keypoints
-
-    # be careful about the points with visibility 0, because the value is 0 (the lowest)
-    augmented_kps = np.array(augmented_kps)
-    visible = augmented_kps[:, 2] != 0  # boolean mask of visible keypoints
-    min_index = np.argmin(augmented_kps[visible, 1])  # min index for the visible
-    min_index = np.arange(len(augmented_kps))[visible][min_index]  # convert to original array
-
-    if min_index > 1:
-        # the rule is NOT followed
-        if min_index == 2 or min_index == 3:
-            # we have to change 2 with 0, 3 with 1, and follow the clockwise order for the rest
-            aux_kps = augmented_kps.copy()
-
-            swap_map = {0: 2, 1: 3, 2: 0, 3: 1, 4: 6, 5: 7, 6: 4, 7: 5}
-
-            for dst, src in swap_map.items():
-                aux_kps[dst] = augmented_kps[src]
-
-            augmented_kps = aux_kps
-        else:
-            # something went wrong, but it shouldn't be possibile to have one of the last 4 keypoints to be the highest
-            print(f"WARNING: not valid augmented keypoints for {image_name}")
-    
-    h, w = augmented_image.shape[:2]  # we need to normalize the keypoints
-    _, augmented_kps = normalize(w, h, keypoints=augmented_kps)
-
-    # save the labels
-    with open(augmented_labels_path, "w") as f:
-        f.write("0 ")
-        for bbox_number in augmented_bbox:
-            f.write(str(bbox_number) + " ")
-        for kp in augmented_kps:
-            # normalize the keypoits
-            x = "0" if kp[0] == 0.0 else str(kp[0])
-            y = "0" if kp[1] == 0.0 else str(kp[1])
-            v = str(int(kp[2]))
-            f.write(f"{x} {y} {v} ")
-
-    # save the image
-    cv2.imwrite(augmented_image_path, augmented_image)
-    print(f"Saved augmented image in {augmented_image_path}")
-
 # =============================================================================
 
 # LOCAL UTILITY FUNCTIONS
@@ -93,161 +36,6 @@ def distribute_evenly(A: int, B: int) -> list:
     remainder = B % A
 
     return [base + 1] * remainder + [base] * (A - remainder)
-
-
-def max_centered_scale(width: int, height: int, keypoints: list, margin_px: float = 0.0, max_scale: float = 1.2) -> float:
-    '''
-    Calculates the max scale possible to apply in the center of the image, so that all the resulting keypoints are inside
-    the image, with a optional margin.
-    To limit the scale there is the max_scale parameter.
-
-    Paramters:
-    width (int): The width of the image
-    height (int): The height of the image
-    keypoints (list): The list of keypoints that have to be inside the image
-    margin_px (float): The margin from the border that the resulting keypoints can have at max
-    max_scale (float): The max scale to not surpass in any way
-
-    Returns:
-    float: The calculated max scale
-    '''
-    # coordinates extraction
-    pts = []
-    for kp in keypoints:
-        x, y = kp[0], kp[1]
-        pts.append((x, y))
-
-    half_w = width / 2.0
-    half_h = height / 2.0
-
-    # new position = scale * (old position - center) + center
-
-    upper_limits = []
-
-    for (x, y) in pts:
-        dx = abs(x - half_w)
-        dy = abs(y - half_h)
-
-        # actual half (consider the margin_px)
-        act_half_w = half_w - margin_px
-        act_half_h = half_h - margin_px
-        if act_half_w <= 0 or act_half_h <= 0:
-            # can't scale: margin too big
-            return 1.0
-
-        if dx == 0:
-            upper_x = float('inf')
-        else:
-            upper_x = act_half_w / dx
-
-        if dy == 0:
-            upper_y = float('inf')
-        else:
-            upper_y = act_half_h / dy
-
-        upper = min(upper_x, upper_y)
-        upper_limits.append(upper)
-
-    if len(upper_limits) == 0:
-        return float('inf')  # theoretically
-
-    max_scale = min(upper_limits)
-
-    # do not allow scale less that 1.0
-    if max_scale < 1.0:
-        return 1.0
-
-    # to avoid having a big scale we have max_scale
-    return min(max_scale, float(max_scale))
-
-        
-def find_max_traslation(width: int, height: int, keypoints: list, affine_scale: float, margin_px=5.0) -> tuple:
-    '''
-    Calculates the max traslation possible to apply on the scaled image, so that all the resulting keypoints
-    are inside the image, with a optional margin.
-
-    Paramters:
-    width (int): The width of the image
-    height (int): The height of the image
-    keypoints (list): The list of keypoints that have to be inside the image
-    affine_scale (float): The scale we have to apply before the traslation
-    margin_px (float): The margin from the border that the resulting keypoints can have at max
-
-    Returns:
-    tuple: The calculated max traslation in the form (max_trasl_left, max_trasl_right), (max_trasl_up, max_trasl_down)
-    '''
-    min_x = np.min(keypoints, axis=0)[0] # the most left x
-    max_x = np.max(keypoints, axis=0)[0] # the most right x
-    min_y = np.min(keypoints, axis=0)[1] # the highest y
-    max_y = np.max(keypoints, axis=0)[1] # the lowest y
-
-    half_w = width / 2.0
-    half_h = height / 2.0
-
-    # new position = scale * (old position - center) + center
-    new_min_x = affine_scale * (min_x - half_w) + half_w
-    new_max_x = affine_scale * (max_x - half_w) + half_w
-    new_min_y = affine_scale * (min_y - half_h) + half_h
-    new_max_y = affine_scale * (max_y - half_h) + half_h
-
-    # the max traslation towards left is given already by new_min_x
-    # the max traslation towards up is given already by new_min_y
-    # for the ones towards right and down we simply do:
-    max_trasl_x = width - new_max_x
-    max_trasl_y = height - new_max_y
-
-    return (-new_min_x + margin_px, max_trasl_x - margin_px), (-new_min_y + margin_px, max_trasl_y - margin_px)
-
-
-def clean_keypoints(width: int, height: int, keypoints: list) -> tuple:
-    '''
-    '''
-
-    # keypoints is an array "logically" divided in pieces of 8
-    # it might be difficult to find the central piece, and so we look at each piece
-    # if a piece have at least one of the first 4 keypoints outside the image, it's not the central
-    # the central can also have one of the first 4 keypoints outside the image, in that case no piece have
-    # all the 4 first keypoints inside the image and result is false
-
-    valid_pieces = 0
-    valid_piece_index = -1
-
-    for i in range(0, len(keypoints), 8):
-        count_valid_kp = 0
-
-        for j in range(0, 4):
-            if 0 <= keypoints[i + j][0] < width and 0 <= keypoints[i + j][1] < height:
-                # the keypoint is valid
-                count_valid_kp += 1
-            else:
-                # the keypoint is NOT valid, we can already break, because the piece won't be valid
-                break
-
-        if count_valid_kp == 4:
-            # we have a valid piece, with the first 4 keypoints valid
-            valid_pieces += 1
-            valid_piece_index = i
-
-    if valid_pieces == 0:
-        # there are some problems for the central piece, that we can solve by chaingin the angle
-        return [], False
-    elif valid_pieces > 1:
-        # It can happen in images where the foosball table is small to appear completly in the reflection
-        print("Error: more valid_pieces > 1 (complete foosball table clone in the reflection)")
-        return [], False
-        
-    # we might already fix the 4 last keypoints
-    # if they are outside the image they should be 0, 0, 0
-
-    fixed = keypoints[valid_piece_index : valid_piece_index + 4]
-    for x, y, v in keypoints[valid_piece_index + 4 : valid_piece_index + 8]:
-        if x < 0 or x >= width or y < 0 or y >= height:
-            v = 0   # mark as not visible
-            x = 0.0
-            y = 0.0
-        fixed.append((x, y, v))
-
-    return fixed, True
 
 
 def get_n_images_to_remove_mask(n_images_to_remove: int, all_cluster_counts: list) -> list:
@@ -319,7 +107,7 @@ def get_clustering_transformation(
     transform = A.Compose(
                 [
                     A.Affine(
-                        scale=(1.0, affine_scale),
+                        scale=(affine_scale, affine_scale),
                         translate_px={"x": x_trasl, "y": y_trasl},
                         rotate=angle_limit,
                         shear=0,
@@ -330,6 +118,7 @@ def get_clustering_transformation(
                     A.Resize(height = new_height, width= new_width),
                     A.RandomBrightnessContrast(brightness_limit=(-0.1, 0.1), contrast_limit=(-0.1, 0.1), p=1.0),
                     A.RGBShift(r_shift_limit=(-5.0, 5.0), g_shift_limit=(-5.0, 5.0), b_shift_limit=(-5.0, 5.0)),
+                    A.Spatter(intensity=(0.0, 0.1), mode="mud", p=0.5),
                     A.ISONoise(intensity=(0.0, 0.1), p=0.7),
                     A.OneOf([
                         A.Blur(blur_limit=5, p=1.0),
@@ -410,7 +199,7 @@ def cluster_data_augmentation(image_name: str, n_images_to_generate: int) -> Non
         # we can have a max of 9 * number of expected keypoints, because we have the reflection in every angle
         # and the keypoints that should have a visibility of 0, do not have it
         # we have to do some cleaning
-        cleaned_keypoints, result = clean_keypoints(new_width, new_height, augmentations["keypoints"])
+        _, cleaned_keypoints, result = clean_labels(new_width, new_height, augmentations["bboxes"], augmentations["keypoints"])
 
         # check if the trasformation caused to have more bboxes, more than 8 keypoints or the first 4 keypoints to be cutted out from the image
         if len(augmentations["bboxes"]) > 1 or not result:
@@ -520,7 +309,7 @@ def remove_some_clustering_augmented_data():
     all_clustering_labels = load_all_clustering_label(AUGMENTED_CLUSTERING_DIRECTORY)
 
     # the amount of augemented images to remove in totale
-    N_IMAGES_TO_REMOVE = 500
+    N_IMAGES_TO_REMOVE = 1323
 
     all_cluster_counts = []
     for i in range(MIN_N_CLUSTERS, MAX_N_CLUSTERS):
@@ -573,6 +362,6 @@ def remove_some_clustering_augmented_data():
                         break
 
             if n_to_remove_in_cluster != count:
-                print(f"Warning: can't delete {n_to_remove_in_cluster} in (k={k}, id={cluster_id}). There aren't enough augmented images")
+                print(f"Warning: can't delete {n_to_remove_in_cluster} images in (k={k}, id={cluster_id}). There aren't enough augmented images")
 
     print(f"Removed {n_removed} images in total")

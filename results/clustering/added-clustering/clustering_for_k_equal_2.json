@@ -1,10 +1,10 @@
 {
     "k": 2,
-    "inertia_score": -244542.875,
-    "silhouette_score": 0.07245297729969025,
+    "inertia_score": -244204.4375,
+    "silhouette_score": 0.07248863577842712,
     "cluster_counts": [
         440,
-        559
+        558
     ],
     "centroids": [
         "index104_frame_015",
@@ -49,22 +49,22 @@
             "index65_frame_028",
             "index83_frame_007",
             "index65_frame_011",
-            "index65_frame_016",
+            "added28_frame_006",
             "index2_frame_018",
             "index88_frame_012",
-            "index108_frame_003",
+            "index83_frame_011",
             "index28_frame_014",
-            "index62_frame_011",
+            "index108_frame_002",
             "index95_frame_020",
             "index2_frame_004",
             "Screenshot (357)",
-            "added43_frame_011",
+            "index18_frame_013",
             "index62_frame_013",
             "index9_frame_011",
             "index107_frame_016",
-            "index108_frame_014",
-            "added43_frame_030",
-            "Foto 53",
+            "index62_frame_023",
+            "index100_frame_001",
+            "index107_frame_017",
             "added43_frame_020",
             "DataSetVari 65",
             "added43_frame_024",
@@ -73,7 +73,7 @@
             "added43_frame_026",
             "index70_frame_025",
             "added16_frame_025",
-            "index86_frame_047"
+            "Foto 204"
         ]
     ]
 }
