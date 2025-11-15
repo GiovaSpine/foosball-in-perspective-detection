@@ -18,22 +18,22 @@ FEATURES_DIRECTORY = f"{PROJECT_DIRECTORY}/data/features"
 LABELS_DIRECTORY = f"{PROJECT_DIRECTORY}/data/labels"
 
 # absolute path of the added data/images
-ADDED_IMAGES_DATA_DIRECTORY = f"{PROJECT_DIRECTORY}/added-data/added-images"
+ADDED_IMAGES_DATA_DIRECTORY = f"{PROJECT_DIRECTORY}/added-data/images"
 
 # absolute path of the added features obtained with a pretrained model on the data
-ADDED_FEATURES_DIRECTORY = f"{PROJECT_DIRECTORY}/added-data/added-features"
+ADDED_FEATURES_DIRECTORY = f"{PROJECT_DIRECTORY}/added-data/features"
 
 # absolute path of the added labels/annotations of the data
-ADDED_LABELS_DIRECTORY = f"{PROJECT_DIRECTORY}/added-data/added-labels"
+ADDED_LABELS_DIRECTORY = f"{PROJECT_DIRECTORY}/added-data/labels"
 
 # absolute path of the augmented data/images
-AUGMENTED_IMAGES_DATA_DIRECTORY = f"{PROJECT_DIRECTORY}/augmented-data/augmented-images"
+AUGMENTED_IMAGES_DATA_DIRECTORY = f"{PROJECT_DIRECTORY}/augmented-data/images"
 
 # absolute path of the augmented features obtained with a pretrained model on the data
-AUGMENTED_FEATURES_DIRECTORY = f"{PROJECT_DIRECTORY}/augmented-data/augmented-features"
+AUGMENTED_FEATURES_DIRECTORY = f"{PROJECT_DIRECTORY}/augmented-data/features"
 
 # absolute path of the augmented labels/annotations of the data
-AUGMENTED_LABELS_DIRECTORY = f"{PROJECT_DIRECTORY}/augmented-data/augmented-labels"
+AUGMENTED_LABELS_DIRECTORY = f"{PROJECT_DIRECTORY}/augmented-data/labels"
 
 # absolute path where we will save the results of KMeans on the first/default data
 DEFAULT_CLUSTERING_DIRECTORY = f"{PROJECT_DIRECTORY}/results/clustering/default-clustering"
@@ -79,6 +79,18 @@ AUGMENTED_IMAGES_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/
 
 # absolute path where we will save the dataframe of the labels/annotations for the augmented dataset
 AUGMENTED_LABELS_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/augmented_labels_dataframe.parquet"
+
+# absolute path of the config file for yolo
+YOLO_CONFIG_DIRECTORY = f"{PROJECT_DIRECTORY}/yolo/yolo-config.yaml"
+
+# txt file that contains the paths of the images for the training set
+TRAIN_TXT_DIRECTORY = f"{PROJECT_DIRECTORY}/yolo/data-sets-division/train.txt"
+
+# txt file that contains the paths of the images for the validation set
+VALIDATION_TXT_DIRECTORY = f"{PROJECT_DIRECTORY}/yolo/data-sets-division/val.txt"
+
+# txt file that contains the paths of the images for the test set
+TEST_TXT_DIRECTORY = f"{PROJECT_DIRECTORY}/yolo/data-sets-division/test.txt"
 
 # =========================================================
 
