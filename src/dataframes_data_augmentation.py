@@ -33,11 +33,6 @@ def crop_decision(w, h, left_x_space, right_x_space, up_y_space, down_y_space):
     if h - down_y_space >= h - 1: y_max = h - 1
     else: y_max = random.randint(h - down_y_space, h - 1)
 
-    if x_max > w - 1:
-        raise ValueError("EHHHHH 1 x", x_max, w)
-    if y_max > h - 1:
-        raise ValueError("EHHHHH 1 y", y_max, h)
-
     return x_min, x_max, y_min, y_max
 
 
@@ -70,7 +65,7 @@ def get_ring_transformation(
     A.Compose: The calculated transformation
     '''
     if increase_saturation:
-        saturation = (10.0, 30.0) 
+        saturation = (10.0, 20.0) 
     else:
         saturation = (-10.0, 10.0)
     
@@ -93,7 +88,7 @@ def get_ring_transformation(
                     A.Resize(height = new_height, width= new_width, p=1.0),
                     A.RandomBrightnessContrast(brightness_limit=(-0.1, 0.1), contrast_limit=(-0.1, 0.1), p=1.0),
                     A.RGBShift(r_shift_limit=(-RGB_SHIFT, RGB_SHIFT), g_shift_limit=(-RGB_SHIFT, RGB_SHIFT), b_shift_limit=(-RGB_SHIFT, RGB_SHIFT), p=1.0),
-                    A.Spatter(intensity=(0.0, 0.1), mode="mud", p=0.5),
+                    A.Spatter(intensity=(0.0, 0.075), mode="mud", p=0.45),
                     A.OneOf([
                         A.HueSaturationValue(hue_shift_limit=HUE_SHIFT, sat_shift_limit=saturation, val_shift_limit=VAL_SHIFT, p=1.0),
                         A.HueSaturationValue(hue_shift_limit=HUE_SHIFT, sat_shift_limit=(-60.0, -40.0), val_shift_limit=VAL_SHIFT, p=1.0),
@@ -133,7 +128,7 @@ def get_rotate_transformation(
     A.Compose: The calculated transformation
     '''
     if increase_saturation:
-        saturation = (10.0, 30.0) 
+        saturation = (10.0, 20.0) 
     else:
         saturation = (-10.0, 10.0)
     
@@ -143,6 +138,7 @@ def get_rotate_transformation(
     
     transform = A.Compose(
                 [
+                    A.Crop(x_min=x_min, y_min=y_min, x_max=x_max, y_max=y_max, p=1.0),
                     A.Affine(
                         scale=(1.0, 1.0),
                         translate_px={"x": 0, "y": 0},
@@ -153,16 +149,81 @@ def get_rotate_transformation(
                         border_mode=cv2.BORDER_REFLECT,
                         p=1.0
                     ),
-                    A.Crop(x_min=x_min, y_min=y_min, x_max=x_max, y_max=y_max, p=1.0),
                     A.Resize(height=new_height, width=new_width, p=1.0),
                     A.RandomBrightnessContrast(brightness_limit=(-0.1, 0.1), contrast_limit=(-0.1, 0.1), p=1.0),
                     A.RGBShift(r_shift_limit=(-RGB_SHIFT, RGB_SHIFT), g_shift_limit=(-RGB_SHIFT, RGB_SHIFT), b_shift_limit=(-RGB_SHIFT, RGB_SHIFT), p=1.0),
-                    A.Spatter(intensity=(0.0, 0.1), mode="mud", p=0.5),
+                    A.Spatter(intensity=(0.0, 0.075), mode="mud", p=0.45),
                     A.OneOf([
                         A.HueSaturationValue(hue_shift_limit=HUE_SHIFT, sat_shift_limit=saturation, val_shift_limit=VAL_SHIFT, p=1.0),
                         A.HueSaturationValue(hue_shift_limit=HUE_SHIFT, sat_shift_limit=(-60.0, -40.0), val_shift_limit=VAL_SHIFT, p=1.0),
                     ], p=1.0),
                     A.HueSaturationValue(hue_shift_limit=HUE_SHIFT, sat_shift_limit=saturation, val_shift_limit=VAL_SHIFT, p=1.0),
+                    A.ISONoise(intensity=(0.0, 0.1), p=0.6),
+                    A.OneOf([
+                        A.Blur(blur_limit=3, p=1.0),
+                        A.GaussianBlur(sigma_limit=(0.1, 0.5), p=1.0),
+                        A.MotionBlur(blur_limit=(3.0, 7.0), angle_range=(0.0, 360.0), p=1.0)
+                    ], p=0.4)
+                ],
+                keypoint_params=A.KeypointParams(format="xy", remove_invisible=False),
+                bbox_params=A.BboxParams(format="yolo", label_fields=[])
+            )
+    
+    return transform
+
+
+def get_flip_transformation(
+        angle: float,
+        increase_saturation: bool,
+        new_width: int,
+        new_height: int,
+        x_min: int,
+        y_min: int,
+        x_max: int,
+        y_max: int
+    ):
+    '''
+    Calculates the transformation for the flip data augmentation, with the parameters for an image.
+
+    Parameters:
+    new_width (int): The new width after resizing
+    new_height (int): The new height after resizing
+    increase_saturation (bool): Whether the transformation has to increase the saturation or not
+
+    Returns:
+    A.Compose: The calculated transformation
+    '''
+    if increase_saturation:
+        saturation = (10.0, 20.0) 
+    else:
+        saturation = (-10.0, 10.0)
+    
+    RGB_SHIFT = 10
+    HUE_SHIFT = (-10.0, 10.0)
+    VAL_SHIFT = (-10.0, 10.0)
+    
+    transform = A.Compose(
+                [   
+                    A.Affine(
+                        scale=(1.0, 1.0),
+                        translate_px={"x": 0, "y": 0},
+                        rotate=(angle, angle),
+                        shear=0,
+                        fit_output=True,  # to cause the actual image to rotate
+                        keep_ratio = True,
+                        border_mode=cv2.BORDER_REFLECT,
+                        p=1.0
+                    ),
+                    A.HorizontalFlip(p=1.0),
+                    A.Crop(x_min=x_min, y_min=y_min, x_max=x_max, y_max=y_max, p=1.0),
+                    A.Resize(height = new_height, width= new_width, p=1.0),
+                    A.RandomBrightnessContrast(brightness_limit=(-0.1, 0.1), contrast_limit=(-0.1, 0.1), p=1.0),
+                    A.RGBShift(r_shift_limit=(-RGB_SHIFT, RGB_SHIFT), g_shift_limit=(-RGB_SHIFT, RGB_SHIFT), b_shift_limit=(-RGB_SHIFT, RGB_SHIFT), p=1.0),
+                    A.Spatter(intensity=(0.0, 0.075), mode="mud", p=0.45),
+                    A.OneOf([
+                        A.HueSaturationValue(hue_shift_limit=HUE_SHIFT, sat_shift_limit=saturation, val_shift_limit=VAL_SHIFT, p=1.0),
+                        A.HueSaturationValue(hue_shift_limit=HUE_SHIFT, sat_shift_limit=(-60.0, -40.0), val_shift_limit=VAL_SHIFT, p=1.0),
+                    ], p=1.0),
                     A.ISONoise(intensity=(0.0, 0.1), p=0.6),
                     A.OneOf([
                         A.Blur(blur_limit=3, p=1.0),
@@ -194,7 +255,7 @@ def get_square_transformation(
     A.Compose: The calculated transformation
     '''
     if increase_saturation:
-        saturation = (10.0, 30.0) 
+        saturation = (10.0, 20.0) 
     else:
         saturation = (-10.0, 10.0)
     
@@ -208,7 +269,7 @@ def get_square_transformation(
                     A.Resize(new_side, new_side),
                     A.RandomBrightnessContrast(brightness_limit=(-0.1, 0.1), contrast_limit=(-0.1, 0.1), p=1.0),
                     A.RGBShift(r_shift_limit=(-RGB_SHIFT, RGB_SHIFT), g_shift_limit=(-RGB_SHIFT, RGB_SHIFT), b_shift_limit=(-RGB_SHIFT, RGB_SHIFT), p=1.0),
-                    A.Spatter(intensity=(0.0, 0.1), mode="mud", p=0.5),
+                    A.Spatter(intensity=(0.0, 0.075), mode="mud", p=0.45),
                     A.OneOf([
                         A.HueSaturationValue(hue_shift_limit=HUE_SHIFT, sat_shift_limit=saturation, val_shift_limit=VAL_SHIFT, p=1.0),
                         A.HueSaturationValue(hue_shift_limit=HUE_SHIFT, sat_shift_limit=(-60.0, -40.0), val_shift_limit=VAL_SHIFT, p=1.0),
@@ -505,15 +566,12 @@ def rotate_data_augmentation(n_to_generate: int, angle_min: float, angle_max: fl
 
                     if save_augmented_data(image_name, augmentations["image"], cleaned_bbox[0], cleaned_keypoints):
                         count += 1
-                    break
-     
-                if count >= n_to_generate:
-                    break
+                        if count >= n_to_generate:
+                            print(f"{count} images generated")
+                            return
+                        break
 
-    if count == n_to_generate:
-        print(f"{n_to_generate} images generated")
-    else:
-        print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
+    print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
 
 
 def theta_data_augmentation(n_to_generate: int, angle_interval: tuple[float, float], desired_angle: float, angle_offset: float = 10.0) -> None:
@@ -625,16 +683,134 @@ def theta_data_augmentation(n_to_generate: int, angle_interval: tuple[float, flo
                         continue
                     
                     if save_augmented_data(image_name, augmentations["image"], cleaned_bbox[0], cleaned_keypoints):
-                        count += 1  
-                    break
+                        count += 1
+                        if count >= n_to_generate:
+                            print(f"{count} images generated")
+                            return
+                        break
 
-            if count >= n_to_generate:
-                break
+    print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
 
-    if count == n_to_generate:
-        print(f"{n_to_generate} images generated")
-    else:
-        print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
+
+def flip_data_augmentation(n_to_generate: int, angle_interval: tuple[float, float], angle_offset: float = 10.0) -> None:
+    '''
+    The flip data augmentation consists in doing a horizontal flip for all the images with a theta in the interval
+    angle_interval.
+
+    Parameters:
+    n_to_generate (int): The amount of images to generate
+    angle_interval (tuple[float, float]): The angle interval for images selection
+    angle_offset (float): A value greater than 0.0 from which a random value will be chosen for a rotation
+    
+    Returns:
+    None
+    '''
+
+    print("Applying flip data augmentation")
+
+    count = 0
+    for _ in range(3):  # to not risk of chosing the same images too many times
+        df_shuffled = df.sample(frac=1).reset_index(drop=True)
+
+        for i in range(len(df_shuffled)):
+            # let's take images with a theta in the angle_interval
+            if angle_interval[0] <= df_shuffled.iloc[i]["theta"] <= angle_interval[1]:
+                image_name = df_shuffled.iloc[i]["filename"]
+
+                # image loading
+                image_path = find_image_path(image_name, AUGMENTED_IMAGES_DATA_DIRECTORY)
+                if image_path == None:
+                    raise FileNotFoundError(f"Image {image_name} not found in {AUGMENTED_IMAGES_DATA_DIRECTORY}")
+                image = cv2.imread(image_path)
+                h, w = image.shape[:2]
+                # labels loading
+                label_path = find_label_path(image_name, AUGMENTED_LABELS_DIRECTORY)
+                if label_path == None:
+                    raise FileNotFoundError(f"Image {label_path} not found in {AUGMENTED_LABELS_DIRECTORY}")
+                bbox, keypoints = label_loading(label_path)
+                _, keypoints = denormalize(w, h, keypoints=keypoints)
+
+                # let's decide a crop
+                # instead of implementening some limits that prevents cropping an image into a horizontal
+                # rectangle, we don't do that, because the amount of horizontal rectangles produced is limited
+                crop_probability = 0.4
+                if random.random() < crop_probability:
+                    (min_x_trasl, max_x_trasl), (min_y_trasl, max_y_trasl) = find_max_traslation(w, h, keypoints[0:4], 1.0, margin_px=10.0)
+                    x_min, x_max, y_min, y_max = crop_decision(w, h, max_x_trasl, min_x_trasl, min_y_trasl, max_y_trasl)
+                else:
+                    x_min, x_max, y_min, y_max = 0, w - 1, 0, h - 1
+                
+                # warning, with the crop we have a new dimension
+                w = x_max - x_min
+                h = y_max - y_min
+
+                # let's decide a resolution
+                new_width = w
+                new_height = h
+                if df_shuffled.iloc[i]["resolution"] == "High":
+                    probability = 0.4
+                    if random.random() < probability:
+                        # with a probability of 'probability', we decrease the resolution to Low
+                        ratio = w / h
+                        if max(w, h) == w:
+                            new_width = random.randrange(480, 640)
+                            new_height = round(new_width / ratio)
+                        else:
+                            new_height = random.randrange(480, 640)
+                            new_width = round(new_height * ratio)
+
+                # let's decide a saturation
+                increase_saturation = False
+                if df_shuffled.iloc[i]["saturation_mean"] > 75.0:
+                    probability = 0.8
+                    if random.random() < probability:
+                        # with a probability of 'probability', we increase the saturation
+                        increase_saturation = True
+                
+                theta = df_shuffled.iloc[i]["theta"]
+                
+                ANGLE_STEP = 10
+                if theta - angle_offset < 0:
+                    rotations = np.linspace(0.0, 2 * angle_offset, ANGLE_STEP)
+                elif theta + angle_offset > 180.0:
+                    rotations = np.linspace(-2 * angle_offset, 0.0, ANGLE_STEP)
+                else:
+                    rotations = np.linspace(-angle_offset, angle_offset, ANGLE_STEP)
+                np.random.shuffle(rotations)
+
+                rotations = rotations.tolist()
+                
+                for r in rotations:
+                    transform = get_flip_transformation(r, increase_saturation, new_width, new_height, x_min, y_min, x_max, y_max)
+                            
+                    augmentations = transform(
+                        image=image,
+                        bboxes=[bbox],  # we have only one bounding box per image
+                        keypoints=keypoints
+                    )
+                    
+                    # WARNING: if in the transformation uses remove_invisible=False, and cv2.BORDER_REFLECT
+                    # we can have a max of 9 * number of expected keypoints, because we have the reflection in every angle
+                    # we have to do some cleaning
+                    cleaned_bbox, cleaned_keypoints, result = clean_labels(new_width, new_height, augmentations["bboxes"], augmentations["keypoints"])
+
+                    # check the result of the cleaning
+                    if not result:
+                        # there are some problems with the kypoints or bouding boxes
+                        if r == rotations[len(rotations) - 1]:
+                            # we even tried the last angle
+                            print(f"WARNING: unable to apply data augmentation for {image_name}")
+                        continue
+                    
+                    if save_augmented_data(image_name, augmentations["image"], cleaned_bbox[0], cleaned_keypoints):
+                        count += 1
+                        if count >= n_to_generate:
+                            print(f"{count} images generated")
+                            return
+                        break
+
+    print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
+
 
 
 def square_data_augmentation(n_to_generate: int, original_shape: str):
@@ -758,24 +934,27 @@ def dataframes_data_augmentation():
     second_ring_x_values = np.linspace(0.25, 0.74, 8)
     second_ring_y_values = np.linspace(0.86, 0.36, 8)
     print("Second ring data augmentation...")
-    #ring_data_augmentation(n_per_square=20, ring_x_values=second_ring_x_values, ring_y_values=second_ring_y_values)
+    ring_data_augmentation(n_per_square=20, ring_x_values=second_ring_x_values, ring_y_values=second_ring_y_values)
 
     # third ring of the centers heatmap
     # WARNING, THE VALUES OF THE HEATMAP GRAPH ARE IN ANOTHER COORDINATE SYSTEM
     third_ring_x_values = np.linspace(0.31, 0.67, 6)
     third_ring_y_values = np.linspace(0.79, 0.44, 6)
     print("Third ring data augmentation...")
-    #ring_data_augmentation(n_per_square=55, ring_x_values=third_ring_x_values, ring_y_values=third_ring_y_values)
+    ring_data_augmentation(n_per_square=55, ring_x_values=third_ring_x_values, ring_y_values=third_ring_y_values)
 
-    # rotate_data_augmentation(n_to_generate=500, angle_min=91.0, angle_max=130.0, offset_angle=50.0)
-    # rotate_data_augmentation(n_to_generate=500, angle_min=48.0, angle_max=90.0, offset_angle=50.0)
+    rotate_data_augmentation(n_to_generate=500, angle_min=91.0, angle_max=130.0, offset_angle=50.0)
+    rotate_data_augmentation(n_to_generate=500, angle_min=48.0, angle_max=90.0, offset_angle=50.0)
 
 
-    theta_data_augmentation(n_to_generate=400, angle_interval=(0.0, 70.0), desired_angle=37.0)
-    theta_data_augmentation(n_to_generate=400, angle_interval=(120.0, 180.0), desired_angle=150.0)
+    theta_data_augmentation(n_to_generate=320, angle_interval=(0.0, 70.0), desired_angle=37.0)
+    theta_data_augmentation(n_to_generate=350, angle_interval=(120.0, 180.0), desired_angle=150.0)
 
-    #square_data_augmentation(n_to_generate=600, original_shape="Horizontal Rectangle")
-    #square_data_augmentation(n_to_generate=400, original_shape="Vertical Rectangle")
+    flip_data_augmentation(n_to_generate=400, angle_interval=(0.0, 76.0))
+    flip_data_augmentation(n_to_generate=500, angle_interval=(98.0, 180.0))
+
+    square_data_augmentation(n_to_generate=600, original_shape="Horizontal Rectangle")
+    square_data_augmentation(n_to_generate=400, original_shape="Vertical Rectangle")
     
 
 
