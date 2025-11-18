@@ -77,31 +77,6 @@ def load_labels_dataframe(*paths_to_look: str) -> pd.DataFrame:
                 # for simplicity, we consider the center of the upper rectangle as the center of the foosball table
 
                 # intersection between the line (coordinates[0], coordinates[2]) and the line (coordinates[1], coordinates[3])
-                def calculate_intersection(line1: tuple, line2: tuple) -> tuple:
-                    '''
-                    Calculate the intersection of 2 lines, each rapresented as 2 points in 2d.
-
-                    Parameters:
-                    line1 (tuple): The first line
-                    line2 (tuple): The second line
-
-                    Returns:
-                    tuple: The point of intersection if it exists
-                    '''
-                    x_diff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-                    y_diff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
-
-                    def determinant(a, b):
-                        return a[0] * b[1] - a[1] * b[0]
-
-                    divisor = determinant(x_diff, y_diff)
-                    if divisor == 0:
-                        raise ValueError("The lines do not intersect.")
-
-                    d = (determinant(*line1), determinant(*line2))
-                    x = determinant(d, x_diff) / divisor
-                    y = determinant(d, y_diff) / divisor
-                    return x, y
                 
                 center = calculate_intersection((coordinates[0], coordinates[2]), (coordinates[1], coordinates[3]))
 

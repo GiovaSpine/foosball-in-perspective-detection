@@ -149,6 +149,36 @@ def normalize(width: int, height: int, bounding_box: list = None, keypoints: lis
 
 # ---------------------------------------------------------
 
+# MATH
+
+def calculate_intersection(line1: tuple, line2: tuple) -> tuple:
+    '''
+    Calculate the intersection of 2 lines, each rapresented as 2 points in 2d.
+
+    Parameters:
+    line1 (tuple): The first line as (x1, y1), (x2, y2)
+    line2 (tuple): The second line as (x1, y1), (x2, y2)
+
+    Returns:
+    tuple: The point of intersection if it exists
+    '''
+    x_diff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
+    y_diff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
+
+    def determinant(a, b):
+        return a[0] * b[1] - a[1] * b[0]
+
+    divisor = determinant(x_diff, y_diff)
+    if divisor == 0:
+        raise ValueError(f"The lines do not intersect. {line1}, {line2}")
+
+    d = (determinant(*line1), determinant(*line2))
+    x = determinant(d, x_diff) / divisor
+    y = determinant(d, y_diff) / divisor
+    return x, y
+
+# ---------------------------------------------------------
+
 # DATA AUGMENTATION
 
 
