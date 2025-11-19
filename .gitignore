@@ -33,7 +33,7 @@ results/images/default-cluster-images/*.png
 results/images/added-cluster-images/*.png
 results/images/augmented-cluster-images/*.png
 
-yolo/data-sets-division
+yolo/data-sets-division/*.txt
 
 src/__pycache__/
 

@@ -1,4 +1,5 @@
 import os
+import glob
 import random
 import math
 import numpy as np
@@ -52,10 +53,6 @@ def crop_decision(width: int, height: int, keypoints: list, offset: int = 5) -> 
         y_max = random.randint(max_y_kp + offset, height - 1)
     
     return x_min, x_max, y_min, y_max
-
-
-    
-
 
 # =============================================================================
 
@@ -922,6 +919,43 @@ def square_data_augmentation(max_per_image: int, n_to_generate: int, original_sh
     print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
 
 
+def delete_too_augmented_images(index_threshold: int) -> None:
+    '''
+    All augmented images have a name in the form:
+    prefix_number_name of the original image.extension.
+    This function deletes all augmented images that have a number
+    above index_threshold in their name.
+
+    Parameters:
+    index_threshold (int): The number from which all augmented images
+                           with a number superior to this, will be
+                           deleted
+
+    Returns:
+    None
+    '''
+    aug_image_form = get_augmented_image_name("").split("_")
+
+    images = glob.glob(os.path.join(AUGMENTED_IMAGES_DATA_DIRECTORY, f"{aug_image_form[0]}_*_*{aug_image_form[2]}"))
+    labels = glob.glob(os.path.join(AUGMENTED_LABELS_DIRECTORY, f"{aug_image_form[0]}_*_*{LABELS_EXTENSION}"))
+    if len(images) != len(labels):
+        raise FileNotFoundError("Error: there is incongruity between the augmented images and labels")
+
+    count = 0
+    for file in images:
+        number = int(os.path.basename(file).split("_")[1])
+        if number > index_threshold:
+            os.remove(file) 
+            count += 1
+    
+    for file in labels:
+        number = int(os.path.basename(file).split("_")[1])
+        if number > index_threshold:
+            os.remove(file)
+       
+    print(f"{count} images deleted")
+
+
 # =============================================================================
 
 def dataframes_data_augmentation():
@@ -949,14 +983,14 @@ def dataframes_data_augmentation():
     second_ring_x_values = np.linspace(0.25, 0.74, 8)
     second_ring_y_values = np.linspace(0.86, 0.36, 8)
     print("Second ring data augmentation...")
-    ring_data_augmentation(n_per_square=20, ring_x_values=second_ring_x_values, ring_y_values=second_ring_y_values)
+    #ring_data_augmentation(n_per_square=20, ring_x_values=second_ring_x_values, ring_y_values=second_ring_y_values)
 
     # third ring of the centers heatmap
     # WARNING, THE VALUES OF THE HEATMAP GRAPH ARE IN ANOTHER COORDINATE SYSTEM
     third_ring_x_values = np.linspace(0.31, 0.67, 6)
     third_ring_y_values = np.linspace(0.79, 0.44, 6)
     print("Third ring data augmentation...")
-    ring_data_augmentation(n_per_square=55, ring_x_values=third_ring_x_values, ring_y_values=third_ring_y_values)
+    ring_data_augmentation(n_per_square=50, ring_x_values=third_ring_x_values, ring_y_values=third_ring_y_values)
 
     rotate_data_augmentation(max_per_image=3, n_to_generate=550, angle_min=91.0, angle_max=130.0, offset_angle=50.0)
     rotate_data_augmentation(max_per_image=3, n_to_generate=550, angle_min=48.0, angle_max=90.0, offset_angle=50.0)
@@ -967,8 +1001,10 @@ def dataframes_data_augmentation():
     flip_data_augmentation(max_per_image=4, n_to_generate=400, angle_interval=(0.0, 76.0))
     flip_data_augmentation(max_per_image=4, n_to_generate=500, angle_interval=(98.0, 180.0))
 
-    square_data_augmentation(max_per_image=2, n_to_generate=1000, original_shape="Horizontal Rectangle")
-    square_data_augmentation(max_per_image=4, n_to_generate=600, original_shape="Vertical Rectangle") 
+    square_data_augmentation(max_per_image=2, n_to_generate=900, original_shape="Horizontal Rectangle")
+    square_data_augmentation(max_per_image=4, n_to_generate=600, original_shape="Vertical Rectangle")
+
+    delete_too_augmented_images(index_threshold=9)
 
 
 dataframes_data_augmentation()

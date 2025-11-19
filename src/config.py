@@ -168,8 +168,10 @@ def get_augmented_image_name(source_image_name: str) -> str:
     source_image_name (str): The source/orginal image without extension
 
     Returns:
-    str: The filename
+    str: The filename in the form prefix_number_source image name.extension
     '''
+    # it has to have a structure: prefix_number_source image name.extension
+
     folder = Path(AUGMENTED_IMAGES_DATA_DIRECTORY)
     pattern = re.compile(rf"da_(\d+)_{re.escape(source_image_name)}\.png")
 
