@@ -10,30 +10,51 @@ from utility import *
 
 
 
-def crop_decision(w, h, left_x_space, right_x_space, up_y_space, down_y_space):
+def crop_decision(width: int, height: int, keypoints: list, offset: int = 5) -> tuple:
     '''
+    It calculates a random crop as x_min, x_max, y_min, y_max for the Crop
+    tranformation, that won't cause the first 4 keypoints to be outside
+    the image.
+
+    Parameters:
+    width (int): The width of the image
+    height (int): The height of the image
+    keypoints (list): The first 4 keypoints
+    offset (int): The offset the crop should have from a keypoint
+    
+    Returns:
+    tuple: The calculated crop as x_min, x_max, y_min, y_max
     '''
-    # cleaning
-    left_x_space = round(abs(left_x_space))
-    right_x_space = round(abs(right_x_space))
-    up_y_space = round(abs(up_y_space))
-    down_y_space = round(abs(down_y_space))
 
-    # chosing x_min, x_max
-    if left_x_space == 0: x_min = 0
-    else: x_min = random.randint(0, left_x_space)
+    min_x_kp = round(np.min(keypoints, axis=0)[0]) # the most left x
+    max_x_kp = round(np.max(keypoints, axis=0)[0]) # the most right x
+    min_y_kp = round(np.min(keypoints, axis=0)[1]) # the highest y
+    max_y_kp = round(np.max(keypoints, axis=0)[1]) # the lowest y
 
-    if w - right_x_space >= w - 1: x_max = w - 1
-    else: x_max = random.randint(w - right_x_space, w - 1)
+    if min_x_kp - offset < 0:
+        x_min = 0
+    else:
+        x_min = random.randint(0, min_x_kp - offset)
 
-    # chosing y_min, y_max
-    if up_y_space == 0: y_min = 0
-    else: y_min = random.randint(0, up_y_space)
+    if max_x_kp + offset > width - 1:
+        x_max = width - 1
+    else:
+        x_max = random.randint(max_x_kp + offset, width - 1)
+    
+    if min_y_kp - offset < 0:
+        y_min = 0
+    else:
+        y_min = random.randint(0, min_y_kp - offset)
 
-    if h - down_y_space >= h - 1: y_max = h - 1
-    else: y_max = random.randint(h - down_y_space, h - 1)
-
+    if max_y_kp + offset > height - 1:
+        y_max = height - 1
+    else:
+        y_max = random.randint(max_y_kp + offset, height - 1)
+    
     return x_min, x_max, y_min, y_max
+
+
+    
 
 
 # =============================================================================
@@ -441,7 +462,7 @@ def ring_data_augmentation(n_per_square: int, ring_x_values: list, ring_y_values
             print(f"Square ({round(x, 2)}, {round(y, 2)}): unable to reach goal: selected {n_per_square_count} images out of {n_per_square}")    
 
 
-def rotate_data_augmentation(n_to_generate: int, angle_min: float, angle_max: float, offset_angle: float = 30.0) -> None:
+def rotate_data_augmentation(max_per_image: int, n_to_generate: int, angle_min: float, angle_max: float, offset_angle: float = 30.0) -> None:
     '''
     The rotate data augmentation consists in generating n_to_generate new image, by rotating a horizontal image,
     with a theta between [angle_min, angle_max], by an angle around 90 or -90 degrees +- random.uniform(0.0, offset_angle),
@@ -449,6 +470,7 @@ def rotate_data_augmentation(n_to_generate: int, angle_min: float, angle_max: fl
     angles in [angle_min, angle_max].
 
     Parameters:
+    max_per_image (int): Max amount of images a single image can generate
     n_to_generate (int): Number of images to generate
     angle_min (float): The min angle an image should have, as theta, to be selected
     angle_max (float): The max angle an image should have, as theta, to be selected
@@ -461,7 +483,7 @@ def rotate_data_augmentation(n_to_generate: int, angle_min: float, angle_max: fl
     print("Applying rotate data augmentation...")
 
     count = 0
-    for _ in range(3):  # to not risk of chosing the same images too many times
+    for _ in range(max_per_image):  # to not risk of chosing the same images too many times
         df_shuffled = df.sample(frac=1).reset_index(drop=True)
 
         for i in range(len(df_shuffled)):
@@ -492,25 +514,18 @@ def rotate_data_augmentation(n_to_generate: int, angle_min: float, angle_max: fl
                 # let's decide a crop
                 # instead of implementening some limits that prevents cropping an image into a horizontal
                 # rectangle, we don't do that, because the amount of horizontal rectangles produced is limited
+                # Warning: by rotating the image of anf angle around 90 or -90, width becomes height and viceversa
                 crop_probability = 0.7
                 if random.random() < crop_probability:
-                    (min_x_trasl, max_x_trasl), _ = find_max_traslation(w, h, keypoints[0:4], 1.0, margin_px=10.0)
-                    if abs(angle_min - 90.0) < abs(angle_max - 90.0):
-                        # rotate to the right
-                        x_min = 0
-                        x_max = h - 1
-                        _, _, y_min, y_max = crop_decision(h, w, 0, 0, min_x_trasl, max_x_trasl)
-                    else:
-                        # rotate to the left
-                        x_min = 0
-                        x_max = h - 1
-                        _, _, y_min, y_max = crop_decision(h, w, 0, 0, max_x_trasl, min_x_trasl)
+                    y_min = 0
+                    y_max = h - 1
+                    x_min, x_max, _, _ = crop_decision(w, h, keypoints[0:4])
                 else:
-                    x_min, y_min, x_max, y_max = 0, 0, h - 1, w - 1
+                    x_min, y_min, x_max, y_max = 0, 0, w - 1, h - 1
 
                 # warning, with the crop we have a new dimension
-                w = x_max - x_min
-                h = y_max - y_min
+                w = y_max - y_min
+                h = x_max - x_min
 
                 # let's decide a resolution
                 # warning, with the crop we have a new dimension
@@ -574,13 +589,14 @@ def rotate_data_augmentation(n_to_generate: int, angle_min: float, angle_max: fl
     print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
 
 
-def theta_data_augmentation(n_to_generate: int, angle_interval: tuple[float, float], desired_angle: float, angle_offset: float = 10.0) -> None:
+def theta_data_augmentation(max_per_image: int, n_to_generate: int, angle_interval: tuple[float, float], desired_angle: float, angle_offset: float = 10.0) -> None:
     '''
     The theta data augmentations consists in generating n_to_generate new images by taking images in a certain angle_interval,
     and applying a rotation such that the resulting theta is around desired_angle plus a random value, that is between -angle_offset
     and angle_offset
 
     Parameters:
+    max_per_image (int): Max amount of images a single image can generate
     n_to_generate (int): The number of images to generate
     angle_interval (tuple[float, float]): The angle interval from which images are selected for augmentation
     desired_angle (float): The desired angle the image should have as theta
@@ -593,7 +609,7 @@ def theta_data_augmentation(n_to_generate: int, angle_interval: tuple[float, flo
     print("Applying theta data augmentation...")
 
     count = 0
-    for _ in range(3):  # to not risk of chosing the same images too many times
+    for _ in range(max_per_image):  # to not risk of chosing the same images too many times
         df_shuffled = df.sample(frac=1).reset_index(drop=True)
 
         for i in range(len(df_shuffled)):
@@ -617,12 +633,12 @@ def theta_data_augmentation(n_to_generate: int, angle_interval: tuple[float, flo
                 # let's decide a crop
                 # instead of implementening some limits that prevents cropping an image into a horizontal
                 # rectangle, we don't do that, because the amount of horizontal rectangles produced is limited
-                crop_probability = 0.4
+                # Warning: by rotating the image of anf angle around 90 or -90, width becomes height and viceversa
+                crop_probability = 0.7
                 if random.random() < crop_probability:
-                    (min_x_trasl, max_x_trasl), (min_y_trasl, max_y_trasl) = find_max_traslation(w, h, keypoints[0:4], 1.0, margin_px=10.0)
-                    x_min, x_max, y_min, y_max = crop_decision(w, h, min_x_trasl, max_x_trasl, min_y_trasl, max_y_trasl)
+                    x_min, x_max, y_min, y_max = crop_decision(w, h, keypoints[0:4], offset=50)
                 else:
-                    x_min, x_max, y_min, y_max = 0, w - 1, 0, h - 1
+                    x_min, y_min, x_max, y_max = 0, 0, w - 1, h - 1
 
                 # warning, with the crop we have a new dimension
                 w = x_max - x_min
@@ -692,12 +708,13 @@ def theta_data_augmentation(n_to_generate: int, angle_interval: tuple[float, flo
     print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
 
 
-def flip_data_augmentation(n_to_generate: int, angle_interval: tuple[float, float], angle_offset: float = 10.0) -> None:
+def flip_data_augmentation(max_per_image: int, n_to_generate: int, angle_interval: tuple[float, float], angle_offset: float = 10.0) -> None:
     '''
     The flip data augmentation consists in doing a horizontal flip for all the images with a theta in the interval
     angle_interval.
 
     Parameters:
+    max_per_image (int): Max amount of images a single image can generate
     n_to_generate (int): The amount of images to generate
     angle_interval (tuple[float, float]): The angle interval for images selection
     angle_offset (float): A value greater than 0.0 from which a random value will be chosen for a rotation
@@ -709,7 +726,7 @@ def flip_data_augmentation(n_to_generate: int, angle_interval: tuple[float, floa
     print("Applying flip data augmentation")
 
     count = 0
-    for _ in range(3):  # to not risk of chosing the same images too many times
+    for _ in range(max_per_image):  # to not risk of chosing the same images too many times
         df_shuffled = df.sample(frac=1).reset_index(drop=True)
 
         for i in range(len(df_shuffled)):
@@ -733,13 +750,13 @@ def flip_data_augmentation(n_to_generate: int, angle_interval: tuple[float, floa
                 # let's decide a crop
                 # instead of implementening some limits that prevents cropping an image into a horizontal
                 # rectangle, we don't do that, because the amount of horizontal rectangles produced is limited
-                crop_probability = 0.4
+                # Warning: by rotating the image of anf angle around 90 or -90, width becomes height and viceversa
+                crop_probability = 0.7
                 if random.random() < crop_probability:
-                    (min_x_trasl, max_x_trasl), (min_y_trasl, max_y_trasl) = find_max_traslation(w, h, keypoints[0:4], 1.0, margin_px=10.0)
-                    x_min, x_max, y_min, y_max = crop_decision(w, h, max_x_trasl, min_x_trasl, min_y_trasl, max_y_trasl)
+                    x_min, x_max, y_min, y_max = crop_decision(w, h, keypoints[0:4], offset=50)
                 else:
-                    x_min, x_max, y_min, y_max = 0, w - 1, 0, h - 1
-                
+                    x_min, y_min, x_max, y_max = 0, 0, w - 1, h - 1
+
                 # warning, with the crop we have a new dimension
                 w = x_max - x_min
                 h = y_max - y_min
@@ -769,7 +786,7 @@ def flip_data_augmentation(n_to_generate: int, angle_interval: tuple[float, floa
                 
                 theta = df_shuffled.iloc[i]["theta"]
                 
-                ANGLE_STEP = 10
+                ANGLE_STEP = 15
                 if theta - angle_offset < 0:
                     rotations = np.linspace(0.0, 2 * angle_offset, ANGLE_STEP)
                 elif theta + angle_offset > 180.0:
@@ -812,13 +829,13 @@ def flip_data_augmentation(n_to_generate: int, angle_interval: tuple[float, floa
     print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
 
 
-
-def square_data_augmentation(n_to_generate: int, original_shape: str):
+def square_data_augmentation(max_per_image: int, n_to_generate: int, original_shape: str):
     '''
     The square data augmentation consists in cropping images that have
     a shape equal to original_shape, to make an image that is a square.
 
     Parameters:
+    max_per_image (int): Max amount of images a single image can generate
     n_to_generate (int): The number of images to generate
     original_shape (str): The shape that a image has to have to be
                           selected for data augmentation
@@ -829,82 +846,80 @@ def square_data_augmentation(n_to_generate: int, original_shape: str):
 
     print("Applying square data augmentation...")
 
-    df_shuffled = df.sample(frac=1).reset_index(drop=True)
-
     count = 0
-    for i in range(len(df_shuffled)):
-        
-        if df_shuffled.iloc[i]["shape"] == original_shape:
+    for _ in range(max_per_image):
 
-            image_name = df_shuffled.iloc[i]["filename"]
+        df_shuffled = df.sample(frac=1).reset_index(drop=True)
 
-            # image loading
-            image_path = find_image_path(image_name, AUGMENTED_IMAGES_DATA_DIRECTORY)
-            if image_path == None:
-                raise FileNotFoundError(f"Image {image_name} not found in {AUGMENTED_IMAGES_DATA_DIRECTORY}")
-            image = cv2.imread(image_path)
-            h, w = image.shape[:2]
-            # labels loading
-            label_path = find_label_path(image_name, AUGMENTED_LABELS_DIRECTORY)
-            if label_path == None:
-                raise FileNotFoundError(f"Image {label_path} not found in {AUGMENTED_LABELS_DIRECTORY}")
-            bbox, keypoints = label_loading(label_path)
-            _, keypoints = denormalize(w, h, keypoints=keypoints)
+        for i in range(len(df_shuffled)):
+            if df_shuffled.iloc[i]["shape"] == original_shape:
 
-            # let's decide a resolution
-            new_side = min(w, h)
-            if df_shuffled.iloc[i]["resolution"] == "High":
-                probability = 0.55
-                if random.random() < probability:
-                    # with a probability of 'probability', we decrease the resolution to Low
-                    new_side = random.randrange(480, 640)
-            
-            # let's decide a saturation
-            increase_saturation = False
-            if df_shuffled.iloc[i]["saturation_mean"] > 75.0:
-                probability = 0.8
-                if random.random() < probability:
-                    # with a probability of 'probability', we increase the saturation
-                    increase_saturation = True
+                image_name = df_shuffled.iloc[i]["filename"]
 
-            min_side = min(w, h)
+                # image loading
+                image_path = find_image_path(image_name, AUGMENTED_IMAGES_DATA_DIRECTORY)
+                if image_path == None:
+                    raise FileNotFoundError(f"Image {image_name} not found in {AUGMENTED_IMAGES_DATA_DIRECTORY}")
+                image = cv2.imread(image_path)
+                h, w = image.shape[:2]
+                # labels loading
+                label_path = find_label_path(image_name, AUGMENTED_LABELS_DIRECTORY)
+                if label_path == None:
+                    raise FileNotFoundError(f"Image {label_path} not found in {AUGMENTED_LABELS_DIRECTORY}")
+                bbox, keypoints = label_loading(label_path)
+                _, keypoints = denormalize(w, h, keypoints=keypoints)
 
-            # WARNING: min_side has to be greater that the max side of the bounding box
-            # otherwise the image can't be fully in a square
-            if min_side < max(bbox[2] * w, bbox[3] * h):
-                # unable to crop the image without distorting the bbox
-                continue
-            
-            transform = get_square_transformation(min_side, new_side, increase_saturation)
+                # let's decide a resolution
+                new_side = min(w, h)
+                if df_shuffled.iloc[i]["resolution"] == "High":
+                    probability = 0.55
+                    if random.random() < probability:
+                        # with a probability of 'probability', we decrease the resolution to Low
+                        new_side = random.randrange(480, 640)
+                
+                # let's decide a saturation
+                increase_saturation = False
+                if df_shuffled.iloc[i]["saturation_mean"] > 75.0:
+                    probability = 0.8
+                    if random.random() < probability:
+                        # with a probability of 'probability', we increase the saturation
+                        increase_saturation = True
 
-            augmentations = transform(
-                image=image,
-                bboxes=[bbox],  # we have only one bounding box per image
-                keypoints=keypoints
-            )
-            new_height, new_width = augmentations["image"].shape[:2]
-            
-            # WARNING: if in the transformation uses remove_invisible=False, and cv2.BORDER_REFLECT
-            # we can have a max of 9 * number of expected keypoints, because we have the reflection in every angle
-            # we have to do some cleaning
-            cleaned_bbox, cleaned_keypoints, result = clean_labels(new_width, new_height, augmentations["bboxes"], augmentations["keypoints"])
+                min_side = min(w, h)
 
-            # check the result of the cleaning
-            if not result:
-                # there are some problems with the kypoints or bouding boxes
-                print(f"WARNING: unable to apply data augmentation for {image_name}")
-                continue
-            
-            if save_augmented_data(image_name, augmentations["image"], cleaned_bbox[0], cleaned_keypoints):
-                count += 1
-            
-            if count >= n_to_generate:
-                break
-        
-    if count != n_to_generate:
-        print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
-    else:
-        print(f"{n_to_generate} images generated")
+                # WARNING: min_side has to be greater that the max side of the bounding box
+                # otherwise the image can't be fully in a square
+                if min_side < max(bbox[2] * w, bbox[3] * h):
+                    # unable to crop the image without distorting the bbox
+                    continue
+                
+                transform = get_square_transformation(min_side, new_side, increase_saturation)
+
+                augmentations = transform(
+                    image=image,
+                    bboxes=[bbox],  # we have only one bounding box per image
+                    keypoints=keypoints
+                )
+                new_height, new_width = augmentations["image"].shape[:2]
+                
+                # WARNING: if in the transformation uses remove_invisible=False, and cv2.BORDER_REFLECT
+                # we can have a max of 9 * number of expected keypoints, because we have the reflection in every angle
+                # we have to do some cleaning
+                cleaned_bbox, cleaned_keypoints, result = clean_labels(new_width, new_height, augmentations["bboxes"], augmentations["keypoints"])
+
+                # check the result of the cleaning
+                if not result:
+                    # there are some problems with the kypoints or bouding boxes
+                    print(f"WARNING: unable to apply data augmentation for {image_name}")
+                    continue
+                
+                if save_augmented_data(image_name, augmentations["image"], cleaned_bbox[0], cleaned_keypoints):
+                    count += 1
+                    if count >= n_to_generate:
+                        print(f"{count} images generated")
+                        return
+
+    print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
 
 
 # =============================================================================
@@ -943,19 +958,17 @@ def dataframes_data_augmentation():
     print("Third ring data augmentation...")
     ring_data_augmentation(n_per_square=55, ring_x_values=third_ring_x_values, ring_y_values=third_ring_y_values)
 
-    rotate_data_augmentation(n_to_generate=500, angle_min=91.0, angle_max=130.0, offset_angle=50.0)
-    rotate_data_augmentation(n_to_generate=500, angle_min=48.0, angle_max=90.0, offset_angle=50.0)
+    rotate_data_augmentation(max_per_image=3, n_to_generate=550, angle_min=91.0, angle_max=130.0, offset_angle=50.0)
+    rotate_data_augmentation(max_per_image=3, n_to_generate=550, angle_min=48.0, angle_max=90.0, offset_angle=50.0)
 
+    theta_data_augmentation(max_per_image=3, n_to_generate=320, angle_interval=(0.0, 70.0), desired_angle=37.0)
+    theta_data_augmentation(max_per_image=3, n_to_generate=350, angle_interval=(120.0, 180.0), desired_angle=150.0)
 
-    theta_data_augmentation(n_to_generate=320, angle_interval=(0.0, 70.0), desired_angle=37.0)
-    theta_data_augmentation(n_to_generate=350, angle_interval=(120.0, 180.0), desired_angle=150.0)
+    flip_data_augmentation(max_per_image=4, n_to_generate=400, angle_interval=(0.0, 76.0))
+    flip_data_augmentation(max_per_image=4, n_to_generate=500, angle_interval=(98.0, 180.0))
 
-    flip_data_augmentation(n_to_generate=400, angle_interval=(0.0, 76.0))
-    flip_data_augmentation(n_to_generate=500, angle_interval=(98.0, 180.0))
-
-    square_data_augmentation(n_to_generate=600, original_shape="Horizontal Rectangle")
-    square_data_augmentation(n_to_generate=400, original_shape="Vertical Rectangle")
-    
+    square_data_augmentation(max_per_image=2, n_to_generate=1000, original_shape="Horizontal Rectangle")
+    square_data_augmentation(max_per_image=4, n_to_generate=600, original_shape="Vertical Rectangle") 
 
 
 dataframes_data_augmentation()
