@@ -1,7 +1,7 @@
 # Data
-train: /data-sets-division/train.txt
-val: /data-sets-division/val.txt
-test: /data-sets-division/test.txt
+train: data-sets-division/train.txt
+val: data-sets-division/val.txt
+test: data-sets-division/test.txt
 
 # Keypoints
 kpt_shape: [8, 3]   # 8 keypoints in the format (x, y, v)

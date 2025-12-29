@@ -4,6 +4,7 @@
 import os
 import re
 import json
+import random
 import numpy as np
 import cv2
 from config import *
@@ -182,7 +183,13 @@ def calculate_intersection(line1: tuple, line2: tuple) -> tuple:
 # DATA AUGMENTATION
 
 
-def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_bbox: list, augmented_kps: list) -> bool:
+def save_augmented_data(
+        image_name: str,
+        augmented_image: np.ndarray,
+        augmented_bbox: list,
+        augmented_kps: list,
+        horizontal_flip: bool = False
+    ) -> bool:
     '''
     Saves an augmented image and its labels in the augmented data directory.
 
@@ -191,6 +198,7 @@ def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_
     augmented_image (np.ndarray): The augmented image produced by albumentations
     augmented_bbox (list): The new bbox
     augmented_keypoints (list): The new kepoints
+    horizontal_flip (bool): Wether in the tranformation there was the HorizontalFlip
 
     Returns:
     bool: True if it's able to save the image and labels, False otherwise
@@ -201,7 +209,7 @@ def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_
 
     augmented_labels_path = os.path.join(AUGMENTED_LABELS_DIRECTORY, augmented_labels_name)
     augmented_image_path = os.path.join(AUGMENTED_IMAGES_DATA_DIRECTORY, augmented_image_name)
-
+    
     # we have to make the label
     # WARNING: we have a rule: the highest keypoint (lowest y) has to be either the first keypoint or the second
     # rotating the image can cause this rule to not be respected, so we have to check the keypoints
@@ -229,6 +237,18 @@ def save_augmented_data(image_name: str, augmented_image: np.ndarray, augmented_
             # it can happen for excessive rotations
             print(f"WARNING: not valid augmented keypoints for {image_name}")
             return False
+    
+    if horizontal_flip:
+        # it was applied HorizontalFlip
+        # we have to reorder the keypoints to respect our rule
+        aux_kps = augmented_kps.copy()
+
+        swap_map = {0: 1, 1: 0, 2: 3, 3: 2, 4: 5, 5: 4, 6: 7, 7: 6}
+
+        for dst, src in swap_map.items():
+            aux_kps[dst] = augmented_kps[src]
+
+        augmented_kps = aux_kps
     
     h, w = augmented_image.shape[:2]  # we need to normalize the keypoints
     _, augmented_kps = normalize(w, h, keypoints=augmented_kps)
@@ -543,3 +563,47 @@ def clean_labels(width: int, height: int, bboxes: list, keypoints: list) -> tupl
     else:
         # the bounding box is already valid
         return bboxes, fixed_kps, True
+
+
+def crop_decision(width: int, height: int, keypoints: list, offset: int = 5) -> tuple:
+    '''
+    It calculates a random crop as x_min, x_max, y_min, y_max for the Crop
+    tranformation, that won't cause the first 4 keypoints to be outside
+    the image.
+
+    Parameters:
+    width (int): The width of the image
+    height (int): The height of the image
+    keypoints (list): The first 4 keypoints
+    offset (int): The offset the crop should have from a keypoint
+    
+    Returns:
+    tuple: The calculated crop as x_min, x_max, y_min, y_max
+    '''
+
+    min_x_kp = round(np.min(keypoints, axis=0)[0]) # the most left x
+    max_x_kp = round(np.max(keypoints, axis=0)[0]) # the most right x
+    min_y_kp = round(np.min(keypoints, axis=0)[1]) # the highest y
+    max_y_kp = round(np.max(keypoints, axis=0)[1]) # the lowest y
+
+    if min_x_kp - offset < 0:
+        x_min = 0
+    else:
+        x_min = random.randint(0, min_x_kp - offset)
+
+    if max_x_kp + offset > width - 1:
+        x_max = width - 1
+    else:
+        x_max = random.randint(max_x_kp + offset, width - 1)
+    
+    if min_y_kp - offset < 0:
+        y_min = 0
+    else:
+        y_min = random.randint(0, min_y_kp - offset)
+
+    if max_y_kp + offset > height - 1:
+        y_max = height - 1
+    else:
+        y_max = random.randint(max_y_kp + offset, height - 1)            
+    
+    return x_min, x_max, y_min, y_max

@@ -11,49 +11,6 @@ from utility import *
 
 
 
-def crop_decision(width: int, height: int, keypoints: list, offset: int = 5) -> tuple:
-    '''
-    It calculates a random crop as x_min, x_max, y_min, y_max for the Crop
-    tranformation, that won't cause the first 4 keypoints to be outside
-    the image.
-
-    Parameters:
-    width (int): The width of the image
-    height (int): The height of the image
-    keypoints (list): The first 4 keypoints
-    offset (int): The offset the crop should have from a keypoint
-    
-    Returns:
-    tuple: The calculated crop as x_min, x_max, y_min, y_max
-    '''
-
-    min_x_kp = round(np.min(keypoints, axis=0)[0]) # the most left x
-    max_x_kp = round(np.max(keypoints, axis=0)[0]) # the most right x
-    min_y_kp = round(np.min(keypoints, axis=0)[1]) # the highest y
-    max_y_kp = round(np.max(keypoints, axis=0)[1]) # the lowest y
-
-    if min_x_kp - offset < 0:
-        x_min = 0
-    else:
-        x_min = random.randint(0, min_x_kp - offset)
-
-    if max_x_kp + offset > width - 1:
-        x_max = width - 1
-    else:
-        x_max = random.randint(max_x_kp + offset, width - 1)
-    
-    if min_y_kp - offset < 0:
-        y_min = 0
-    else:
-        y_min = random.randint(0, min_y_kp - offset)
-
-    if max_y_kp + offset > height - 1:
-        y_max = height - 1
-    else:
-        y_max = random.randint(max_y_kp + offset, height - 1)
-    
-    return x_min, x_max, y_min, y_max
-
 # =============================================================================
 
 # TRANSFORMATIONS
@@ -341,7 +298,7 @@ def ring_data_augmentation(n_per_square: int, ring_x_values: list, ring_y_values
     for y in ring_y_values[-2:0:-1]:
         squares.append((ring_x_values[0], y))
 
-    print("Selecting images for ring balacing...")
+    print("Applying ring data augmentation...")
     for x, y in squares:
         df_shuffled = df.sample(frac=1).reset_index(drop=True)
 
@@ -375,9 +332,9 @@ def ring_data_augmentation(n_per_square: int, ring_x_values: list, ring_y_values
 
             ROTATION_STEP = 50
             if theta <= 90.0:
-                rotations = np.linspace(-theta, 90.0-theta, ROTATION_STEP)
+                rotations = np.linspace(-(abs(theta - MIN_THETA)), 90.0 - theta, ROTATION_STEP)
             else:
-                rotations = np.linspace(180.0-theta, -theta+90.0, ROTATION_STEP)
+                rotations = np.linspace(-theta + 90.0, abs(MAX_THETA - theta), ROTATION_STEP)
                 
             SHUFFLE_PROB = 0.5
             # with a probability of 1.0 - SHUFFLE_PROB we don't shuffle the rotations array
@@ -784,10 +741,12 @@ def flip_data_augmentation(max_per_image: int, n_to_generate: int, angle_interva
                 theta = df_shuffled.iloc[i]["theta"]
                 
                 ANGLE_STEP = 15
-                if theta - angle_offset < 0:
-                    rotations = np.linspace(0.0, 2 * angle_offset, ANGLE_STEP)
-                elif theta + angle_offset > 180.0:
+                if theta - angle_offset < MIN_THETA:
+                    # careful: the image will be flipped
                     rotations = np.linspace(-2 * angle_offset, 0.0, ANGLE_STEP)
+                elif theta + angle_offset > MAX_THETA:
+                    # careful: the image will be flipped
+                    rotations = np.linspace(0.0, 2 * angle_offset, ANGLE_STEP)
                 else:
                     rotations = np.linspace(-angle_offset, angle_offset, ANGLE_STEP)
                 np.random.shuffle(rotations)
@@ -816,7 +775,7 @@ def flip_data_augmentation(max_per_image: int, n_to_generate: int, angle_interva
                             print(f"WARNING: unable to apply data augmentation for {image_name}")
                         continue
                     
-                    if save_augmented_data(image_name, augmentations["image"], cleaned_bbox[0], cleaned_keypoints):
+                    if save_augmented_data(image_name, augmentations["image"], cleaned_bbox[0], cleaned_keypoints, horizontal_flip=True):
                         count += 1
                         if count >= n_to_generate:
                             print(f"{count} images generated")
@@ -953,7 +912,7 @@ def delete_too_augmented_images(index_threshold: int) -> None:
         if number > index_threshold:
             os.remove(file)
        
-    print(f"{count} images deleted")
+    print(f"{count} agumented images deleted above index {index_threshold}")
 
 
 # =============================================================================
@@ -983,7 +942,7 @@ def dataframes_data_augmentation():
     second_ring_x_values = np.linspace(0.25, 0.74, 8)
     second_ring_y_values = np.linspace(0.86, 0.36, 8)
     print("Second ring data augmentation...")
-    #ring_data_augmentation(n_per_square=20, ring_x_values=second_ring_x_values, ring_y_values=second_ring_y_values)
+    ring_data_augmentation(n_per_square=25, ring_x_values=second_ring_x_values, ring_y_values=second_ring_y_values)
 
     # third ring of the centers heatmap
     # WARNING, THE VALUES OF THE HEATMAP GRAPH ARE IN ANOTHER COORDINATE SYSTEM
@@ -992,16 +951,13 @@ def dataframes_data_augmentation():
     print("Third ring data augmentation...")
     ring_data_augmentation(n_per_square=50, ring_x_values=third_ring_x_values, ring_y_values=third_ring_y_values)
 
-    rotate_data_augmentation(max_per_image=3, n_to_generate=550, angle_min=91.0, angle_max=130.0, offset_angle=50.0)
-    rotate_data_augmentation(max_per_image=3, n_to_generate=550, angle_min=48.0, angle_max=90.0, offset_angle=50.0)
+    theta_data_augmentation(max_per_image=3, n_to_generate=400, angle_interval=(MIN_THETA, 90.0), desired_angle=62.0)
+    theta_data_augmentation(max_per_image=3, n_to_generate=400, angle_interval=(90, MAX_THETA), desired_angle=110.0)
 
-    theta_data_augmentation(max_per_image=3, n_to_generate=320, angle_interval=(0.0, 70.0), desired_angle=37.0)
-    theta_data_augmentation(max_per_image=3, n_to_generate=350, angle_interval=(120.0, 180.0), desired_angle=150.0)
+    flip_data_augmentation(max_per_image=3, n_to_generate=800, angle_interval=(MIN_THETA, 89.0))
+    flip_data_augmentation(max_per_image=3, n_to_generate=800, angle_interval=(89.0, MAX_THETA))
 
-    flip_data_augmentation(max_per_image=4, n_to_generate=400, angle_interval=(0.0, 76.0))
-    flip_data_augmentation(max_per_image=4, n_to_generate=500, angle_interval=(98.0, 180.0))
-
-    square_data_augmentation(max_per_image=2, n_to_generate=900, original_shape="Horizontal Rectangle")
+    square_data_augmentation(max_per_image=2, n_to_generate=1400, original_shape="Horizontal Rectangle")
     square_data_augmentation(max_per_image=4, n_to_generate=600, original_shape="Vertical Rectangle")
 
     delete_too_augmented_images(index_threshold=9)

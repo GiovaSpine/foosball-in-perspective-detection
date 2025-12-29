@@ -37,5 +37,15 @@ yolo/data-sets-division/*.txt
 
 src/__pycache__/
 
+data/labels.cache
+added-data/labels.cache
+augmented-data/labels.cache
+
+yolo/runs/train05/args.yaml
+yolo/runs/train05/train_batch*.jpg
+yolo/runs/train05/val_batch*.jpg
+
+yolo*.pt
+
 src/test.py
 results/test/

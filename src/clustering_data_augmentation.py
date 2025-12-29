@@ -118,12 +118,13 @@ def get_clustering_transformation(
                     A.Resize(height = new_height, width= new_width),
                     A.RandomBrightnessContrast(brightness_limit=(-0.1, 0.1), contrast_limit=(-0.1, 0.1), p=1.0),
                     A.RGBShift(r_shift_limit=(-5.0, 5.0), g_shift_limit=(-5.0, 5.0), b_shift_limit=(-5.0, 5.0)),
-                    A.Spatter(intensity=(0.0, 0.1), mode="mud", p=0.5),
+                    A.Spatter(intensity=(0.0, 0.075), mode="mud", p=0.5),
                     A.ISONoise(intensity=(0.0, 0.1), p=0.7),
                     A.OneOf([
-                        A.Blur(blur_limit=5, p=1.0),
-                        A.GaussianBlur(sigma_limit=(0.1, 0.7), p=1.0)
-                    ], p=0.5)
+                        A.Blur(blur_limit=3, p=1.0),
+                        A.GaussianBlur(sigma_limit=(0.1, 0.5), p=1.0),
+                        A.MotionBlur(blur_limit=(3.0, 7.0), angle_range=(0.0, 360.0), p=1.0)
+                    ], p=0.4)
                 ],
                 keypoint_params=A.KeypointParams(format="xy", remove_invisible=False),
                 bbox_params=A.BboxParams(format="yolo", label_fields=[])
@@ -308,8 +309,8 @@ def remove_some_clustering_augmented_data():
     clustering_data = load_clustering_data(AUGMENTED_CLUSTERING_DIRECTORY)
     all_clustering_labels = load_all_clustering_label(AUGMENTED_CLUSTERING_DIRECTORY)
 
-    # the amount of augemented images to remove in totale
-    N_IMAGES_TO_REMOVE = 1323
+    # the amount of augemented images to remove in total
+    N_IMAGES_TO_REMOVE = 1500
 
     all_cluster_counts = []
     for i in range(MIN_N_CLUSTERS, MAX_N_CLUSTERS):
@@ -365,3 +366,4 @@ def remove_some_clustering_augmented_data():
                 print(f"Warning: can't delete {n_to_remove_in_cluster} images in (k={k}, id={cluster_id}). There aren't enough augmented images")
 
     print(f"Removed {n_removed} images in total")
+

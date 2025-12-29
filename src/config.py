@@ -83,6 +83,9 @@ AUGMENTED_LABELS_DATAFRAME_DIRECTORY = f"{PROJECT_DIRECTORY}/results/dataframes/
 # absolute path of the config file for yolo
 YOLO_CONFIG_DIRECTORY = f"{PROJECT_DIRECTORY}/yolo/yolo-config.yaml"
 
+# absolute path where the runs will be saved
+YOLO_RUNS_DIRECTORY = f"{PROJECT_DIRECTORY}/yolo/runs"
+
 # txt file that contains the paths of the images for the training set
 TRAIN_TXT_DIRECTORY = f"{PROJECT_DIRECTORY}/yolo/data-sets-division/train.txt"
 
@@ -194,5 +197,17 @@ MIN_N_CLUSTERS = 2  # the lowest number of clusters to apply KMeans
 MAX_N_CLUSTERS = 20  # the highest number of clusters to apply KMeans
 N_SAMPLES_FOR_MIN_N_CLUSTERS = 30  # the number of samples images for every cluster, to collect when n_clusters = MIN_N_CLUSTERS
 N_SAMPLES_FOR_MAX_N_CLUSTERS = 15  # the number of samples images for every cluster, to collect when n_clusters = MAX_N_CLUSTERS
+
+# =========================================================
+
+# given the direction of a foosball table
+# (where the direction is the direction from the center of the upper rectangle (given by the first 4 keypoint)
+# towards the point in the middle between the first 2 keypoints)
+# theta is simply the angle of this direction
+# for this project theta should be between 40 and 140
+
+MIN_THETA = 40.0
+MAX_THETA = 140.0
+
 
 # =========================================================
