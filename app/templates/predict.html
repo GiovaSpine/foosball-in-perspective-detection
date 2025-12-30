@@ -1,0 +1,49 @@
+
+{% extends "base.html" %}
+
+<!-- ========================================================================== -->
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='predict_style.css') }}">
+{% endblock %}
+
+<!-- ========================================================================== -->
+
+{% block content %}
+
+    <!-- upload the image -->
+
+    <h2>Predict</h2>
+    
+    <form method="POST" enctype="multipart/form-data">
+        <label for="image">Upload a photo:</label>
+        <input id="photo_input" type="file" name="image" accept="image/*">
+    </form>
+
+    <hr>
+
+    <!-- results visualization -->
+
+    <div class="main_layout">
+        <div class="button_panel">
+            <button type="button" id="show_keypoints" onclick="show_keypoints()">show keypoints</button>
+            <button type="button" id="show_bounding_box" onclick="show_bounding_box()">show bounding box</button>
+            <button type="button" id="show_edges" onclick="show_edges()">show edges</button>
+            <button type="button" id="show_goalnets" onclick="show_goalnets()">show goalnets</button>
+            <button type="button" id="show_player_lines" onclick="show_player_lines()">show player lines</button>
+            <button type="button" id="translate_position" onclick="translate_position()">translate position</button>
+        </div>
+        
+        <canvas id="photo_canvas"></canvas>
+
+        <canvas id="reference_canvas"></canvas>
+
+    </div>
+
+{% endblock %}
+
+<!-- ========================================================================== -->
+
+{% block scripts %}
+    <script type="module" src="{{ url_for('static', filename='predict_script.js') }}"></script>
+{% endblock %}

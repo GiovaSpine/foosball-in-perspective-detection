@@ -1,0 +1,67 @@
+
+#upload_image_form {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+    width: fit-content;
+    text-align: left;
+}
+
+
+#upload_image_form button[type="submit"] {
+    display: block;
+    margin: 0 auto;
+}
+
+
+/* ============================================================================ */
+
+/* MAIN LAYOUT */
+
+/* ratio calculation */
+/* ratio = w / h */
+/* the right panel has a width of x% */
+/* a foosball table have a ratio of 0.5 */
+/* (x * w) / h = 0.5, because we want the height to be double the x% of w */
+/* but ratio = w / h, so aspect-ratio has to be 0.5 / x */
+
+.main_layout {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    aspect-ratio: 2.5;
+    height: auto;
+}
+
+.button_panel {
+    width: 15%;
+    min-width: 160px;
+    background: #f2f2f2;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.button_panel button {
+    padding: 10px;
+    cursor: pointer;
+}
+
+#photo_canvas{
+    width: 65%;
+    height: 100%;
+    border: 1px solid black;
+    box-sizing: border-box;
+}
+
+#reference_canvas {
+    width: 20%;
+    height: 100%;
+    border: 1px solid black;
+    box-sizing: border-box;
+}

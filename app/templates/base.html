@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <!-- default title is Foosball In Perspective Detection -->
+    <title>{% block title %}Foosball In Perspective Detection{% endblock %}</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- to avoid favicon.ico error -->
+    <link rel="icon" href="data:,">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='main_style.css') }}">
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+    <!-- common header -->
+    <header>
+        <div class="header_container">
+            <div>
+                <a class="header_link" href="{{ url_for('index') }}">Index</a>
+                <a class="header_link" href="{{ url_for('documentation') }}">Documentation</a>
+                <a class="header_link" href="{{ url_for('results') }}">Results</a>
+                <a class="header_link" href="{{ url_for('guide') }}">Guide</a>
+                <a class="header_link" href="{{ url_for('predict') }}">Predict</a>
+            </div>
+            <div>
+                <p>Foosball In Perspective Detection</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- specific content-->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- common footer -->
+    <footer>
+        <p>Made by GiovaSpine</p>
+    </footer>
+
+    <!-- common JS -->
+    <script src="{{ url_for('static', filename='main_script.js') }}"></script>
+
+    <!-- specific JS -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>
