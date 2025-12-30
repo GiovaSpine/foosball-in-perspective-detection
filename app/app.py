@@ -3,13 +3,12 @@ from ultralytics import YOLO
 import os
 from pathlib import Path
 import uuid
+from algorithms.point_translation import *
 
 
 
 app = Flask(__name__, template_folder="templates")
 
-
-# Carico il modello YOLO keypoints già allenato
 APP_DIRECTORY = Path(__file__).resolve().parent
 model = YOLO(os.path.join(APP_DIRECTORY, "model", "best.pt"))
 
@@ -78,5 +77,29 @@ def predict():
     })
 
 
+@app.route("/translate-position", methods=["POST"])
+def translate_position():
+    # we receive the 4 lower keypoints (the last 4) and the point to translate
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "No JSON body"}), 400
+
+    lower_keypoints = data.get("lower_keypoints")
+    point = data.get("point")
+
+    if not lower_keypoints or not point:
+        return jsonify({"error": "Missing data"}), 400
+    
+    translated_point = translate_point(point, lower_keypoints)
+
+    return jsonify({
+        "translated_point": translated_point,
+    })
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+
+
+
