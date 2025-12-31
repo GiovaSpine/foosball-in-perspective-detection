@@ -72,7 +72,7 @@ def predict():
 
     return jsonify({
         "keypoints": keypoints,
-        "bounding_box": bounding_boxes,
+        "bounding_boxes": bounding_boxes,
         "confidence": confidence
     })
 
