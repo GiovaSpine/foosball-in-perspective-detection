@@ -47,5 +47,7 @@ yolo/runs/train05/val_batch*.jpg
 
 yolo*.pt
 
+app/algorithms/__pycache__
+
 src/test.py
 results/test/

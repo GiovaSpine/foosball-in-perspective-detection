@@ -37,7 +37,6 @@
 .button_panel {
     width: 15%;
     min-width: 160px;
-    background: #f2f2f2;
 
     display: flex;
     flex-direction: column;
@@ -55,13 +54,11 @@
 #photo_canvas{
     width: 65%;
     height: 100%;
-    border: 1px solid black;
     box-sizing: border-box;
 }
 
 #reference_canvas {
     width: 20%;
     height: 100%;
-    border: 1px solid black;
     box-sizing: border-box;
 }

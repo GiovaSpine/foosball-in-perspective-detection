@@ -122,65 +122,46 @@ def translate_point(point: list, lower_keypoints: list):
     :type lower_keypoints: list
     '''
 
-    #lower_keypoints = [[5,10], [10,9], [11,1], [3,2]]
-    #point = [5, 4]
-    lower_keypoints = [[456, 37], [798, 112], [564, 806], [50, 612]]
-    point = [565, 632]
-
     # let's check if the lower_keypoints generate a valid area: they should generate a 4 sided convex polygon
     if not is_convex_quadrilateral(lower_keypoints):
-        return None
+        return None, "The quadrilateral formed by the lower keypoints is not convex"
 
     # let's check if the point is inside the quadrilateral 
     if not is_point_in_quadrilateral(point, lower_keypoints):
-        return None
+        return None, "The point to translate is not inside the quadrilateral formed by the lower keypoints"
     
     # at this point we can translate
 
     # we need the vanishing points
     vanishing_point_x = calculate_intersection((lower_keypoints[0], lower_keypoints[1]), (lower_keypoints[2], lower_keypoints[3]))
     vanishing_point_y = calculate_intersection((lower_keypoints[0], lower_keypoints[3]), (lower_keypoints[1], lower_keypoints[2]))
-    print(vanishing_point_x)
-    print(vanishing_point_y)
-    print("")
 
     # let's find the center of the quadrilateral
     center = calculate_intersection((lower_keypoints[0], lower_keypoints[2]), (lower_keypoints[1], lower_keypoints[3]))
-    print(center)
-    print("")
 
     # let's find the intersection between the line from the point to the vanishing_point_y
     # and the line from the center to the vanishing_point_x
     x_projection = calculate_intersection((point, vanishing_point_y), (center, vanishing_point_x))
-    print(x_projection)
-    print("")
 
     # let's find the intersection between the line from the point to the vanishing_point_x
     # and the line from the center to the vanishing_point_y
     y_projection = calculate_intersection((point, vanishing_point_x), (center, vanishing_point_y))
-    print(y_projection)
-    print("")
 
     # the center of each side
     side_0_3_center = calculate_intersection((lower_keypoints[0], lower_keypoints[3]), (center, vanishing_point_x))
     side_1_2_center = calculate_intersection((lower_keypoints[1], lower_keypoints[2]), (center, vanishing_point_x))
     side_0_1_center = calculate_intersection((lower_keypoints[0], lower_keypoints[1]), (center, vanishing_point_y))
     side_2_3_center = calculate_intersection((lower_keypoints[2], lower_keypoints[3]), (center, vanishing_point_y))
-    print(side_0_3_center)
-    print(side_2_3_center)
-    print("")
 
     # let's look if center to x_projection has the same direction of center to side_0_3_center
     if np.dot((np.array(x_projection) - np.array(center)), (np.array(side_0_3_center) - np.array(center))) > 0.0:
         # we know that x_projection is a point in the line from center to side_0_3_center
         # and that the translated x position is negative
-        print("side_0_3_center")
         side_x = side_0_3_center
         sign_x = False
     else:
         # we know that x_projection is a point in the line from center to side_1_2_center
         # and that the translated x position is positive
-        print("side_1_2_center")
         side_x = side_1_2_center
         sign_x = True
     
@@ -188,16 +169,13 @@ def translate_point(point: list, lower_keypoints: list):
     if np.dot((np.array(y_projection) - np.array(center)), (np.array(side_0_1_center) - np.array(center))) > 0.0:
         # we know that y_projection is a point in the line from center to side_0_1_center
         # and that the translated y position is positive
-        print("side_0_1_center")
         side_y = side_0_1_center
         sign_y = True
     else:
         # we know that y_projection is a point in the line from center to side_2_3_center
         # and that the translated y position is negative
-        print("side_2_3_center")
         side_y = side_2_3_center
         sign_y = False
-    print("")
 
     # let's use the linear interpolation: t*A + (1 - t)*B for t in [0, 1]
 
@@ -211,8 +189,5 @@ def translate_point(point: list, lower_keypoints: list):
     ty = find_t(B=center, A=side_y, point=y_projection)
     if not sign_y: ty *= -1.0  # sign adjustment
 
-    print(tx, ty)
-    return tx, ty
+    return [tx, ty], None
 
-
-translate_point(0, 0)

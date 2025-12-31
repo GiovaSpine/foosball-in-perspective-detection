@@ -91,7 +91,10 @@ def translate_position():
     if not lower_keypoints or not point:
         return jsonify({"error": "Missing data"}), 400
     
-    translated_point = translate_point(point, lower_keypoints)
+    translated_point, error = translate_point(point, lower_keypoints)
+
+    if error:
+        return jsonify(error=error), 422
 
     return jsonify({
         "translated_point": translated_point,

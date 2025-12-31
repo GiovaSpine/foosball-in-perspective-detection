@@ -18,14 +18,35 @@ export function image_position_and_scale(image_width, image_height, canvas_width
 
 
 export function draw(){
-
-    const [x, y, scale] = image_position_and_scale(state.photo.width, state.photo.height, photo_canvas.width, photo_canvas.height);
     
     // clear the canvas
-    pctx.clearRect(0, 0, photo_canvas.width, photo_canvas.height);
+    pctx.fillStyle = "rgb(230, 230, 230)";
+    pctx.fillRect(0, 0, photo_canvas.width, photo_canvas.height);
+
+    const x = state.image_x;
+    const y = state.image_y;
+    const scale = state.image_scale;
 
     // draw the photo on the canvas
     pctx.drawImage(state.photo, x, y, state.photo.width * scale, state.photo.height * scale);
+
+    // show play area
+    if(state.show_play_area){
+        // the last 4 keypoints are the ones for the play area
+        const lower_keypoints = state.prediction.keypoints[0].slice(-4);
+
+        // we have to draw the quadrilater that connects them
+        pctx.beginPath();
+        pctx.moveTo(lower_keypoints[0][0] * scale + x, lower_keypoints[0][1] * scale + y);
+        for (let i = 1; i < lower_keypoints.length; i++) {
+            pctx.lineTo(lower_keypoints[i][0] * scale + x, lower_keypoints[i][1] * scale + y);
+        }
+        pctx.closePath();
+
+        pctx.fillStyle = "rgba(255, 0, 255, 0.4)";
+        pctx.fill();
+    }
+    
 
     // draw the results
     draw_results(x, y, scale);
@@ -36,14 +57,18 @@ export function draw(){
 
 function draw_results(x0, y0, scale) {
     pctx.fillStyle = "red";
-    console.log(scale)
-    console.log()
-    state.prediction.keypoints.forEach(person => {
-        person.forEach(([x, y]) => {
-            pctx.beginPath();
-            pctx.arc((x * scale) + x0, (y * scale) + y0 , 4, 0, Math.PI * 2);
-            pctx.fill();
-        });
+
+    const keypoints = state.prediction.keypoints[0];
+
+    keypoints.forEach(([x, y]) => {
+        pctx.beginPath();
+        pctx.arc(
+            x * scale + x0,
+            y * scale + y0,
+            4,
+            0,
+            Math.PI * 2
+        );
+        pctx.fill();
     });
 }
-
