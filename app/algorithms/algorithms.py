@@ -83,7 +83,7 @@ def calculate_intersection(line1: tuple, line2: tuple) -> tuple:
 
 # ---------------------------------------------------------
 
-def translate_point(point: list, lower_keypoints: list):
+def translate_point(point: list, lower_keypoints: list, max_iterations: int=100) -> list:
     '''
     Docstring for translate_point
     
@@ -92,12 +92,6 @@ def translate_point(point: list, lower_keypoints: list):
     :param lower_keypoints: Description
     :type lower_keypoints: list
     '''
-
-    lower_keypoints = [[1760, 478], [2916, 562], [2582, 1822], [475, 1512]]
-    point = [1357, 1255]
-
-    #lower_keypoints = [[1795, 735], [3061, 791], [2887, 1786], [251, 1511]]
-    #point = [2751, 978]
 
     # let's check if the lower_keypoints generate a valid area: they should generate a 4 sided convex polygon
     if not is_convex_quadrilateral(lower_keypoints):
@@ -113,34 +107,28 @@ def translate_point(point: list, lower_keypoints: list):
     vanishing_point_x = calculate_intersection((lower_keypoints[0], lower_keypoints[1]), (lower_keypoints[2], lower_keypoints[3]))
     vanishing_point_y = calculate_intersection((lower_keypoints[0], lower_keypoints[3]), (lower_keypoints[1], lower_keypoints[2]))
     
+    # vertices of the chunk of the play area, following the same order of the lower_keypoints
     v0 = lower_keypoints[0]
     v1 = lower_keypoints[1]
     v2 = lower_keypoints[2]
     v3 = lower_keypoints[3]
 
-    # ...
+    # translated point starting in (0, 0)
     translated_point = [0.0, 0.0]
 
     # step is used to update translated_point, and will be divided by 2 each time
     step = 0.5
 
+    # the min threasold between the center and point to quit the algorithm
     THRESHOLD = 0.001
 
-    for i in range(100):
+    for _ in range(max_iterations):
 
         # let's find the center of the quadrilateral
         center = calculate_intersection((v0, v2), (v1, v3))
 
-        print(center)
-        print(point)
-        print(translated_point)
-        print("")
-
-        # is center close to enought to the point ?
+        # is center close to enough to the point ?
         if np.linalg.norm(np.array(point) - np.array(center)) <= THRESHOLD:
-            print("FINE")
-            print(i)
-            print(translated_point)
             break
 
         # let's find the intersection between the line from the point to the vanishing_point_y
@@ -217,5 +205,64 @@ def translate_point(point: list, lower_keypoints: list):
     return translated_point, None
 
 
+def calculate_player_lines(keypoints: list) -> list:
+    '''
+    Docstring for calculate_player_lines
+    
+    :param keypoints: Description
+    :type keypoints: list
+    :return: Description
+    :rtype: list
+    '''
 
-translate_point(0, 0)
+    # we have to divide the face given by the keypoints 0, 3, 7, 4
+    # and the face given by the keypoints 1, 2, 6, 5
+
+    n_division = 3
+
+    vp_z_1 = calculate_intersection((keypoints[0], keypoints[4]), (keypoints[1], keypoints[5]))
+    vp_z_2 = calculate_intersection((keypoints[3], keypoints[7]), (keypoints[2], keypoints[6]))
+    # vanishing_point_z_1 should in theory be equal to vanishing_point_z_2
+    # in practice we take the average
+    vanishing_point_z = ((vp_z_1[0] + vp_z_2[0]) / 2.0, (vp_z_1[1] + vp_z_2[1]) / 2.0)
+
+    def get_center(centers, iteration, v0, v1, v2, v3):
+        '''
+        Docstring for get_center
+        
+        :param v0: Description
+        :param v1: Description
+        :param v2: Description
+        :param v3: Description
+        '''
+        center = calculate_intersection((v0, v2), (v1, v3))
+        
+        upper_side_center = calculate_intersection((center, vanishing_point_z), (v0, v3))
+        lower_side_center = calculate_intersection((center, vanishing_point_z), (v1, v2))
+
+        if iteration < n_division:
+            get_center(centers, iteration + 1, v0, v1, lower_side_center, upper_side_center)
+            get_center(centers, iteration + 1, upper_side_center, lower_side_center, v2, v3)
+        else:
+            centers.append(center)
+
+    centers_face_1 = []
+    centers_face_2 = []
+    get_center(centers_face_1, 0, keypoints[0], keypoints[4], keypoints[7], keypoints[3])
+    get_center(centers_face_2, 0, keypoints[5], keypoints[1], keypoints[2], keypoints[6])
+
+    player_lines = [[p1, p2] for p1, p2 in zip(centers_face_1, centers_face_2)]
+
+    return player_lines, None
+
+"""
+keypoints = [[ 154.50550842285156, 55.66485595703125 ],
+[ 240.74415588378906, 53.13665771484375 ],
+[ 271.59075927734375, 153.83486938476562 ],
+[ 132.1214141845703, 156.548095703125 ],
+[ 155.8950958251953, 69.52552795410156 ],
+[ 240.4196014404297, 66.28471374511719 ],
+[ 268.8418884277344, 170.04718017578125 ],
+[ 136.05929565429688, 173.65614318847656 ]]
+calculate_player_lines(keypoints)
+"""

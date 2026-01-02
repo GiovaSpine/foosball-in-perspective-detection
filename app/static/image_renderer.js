@@ -138,15 +138,42 @@ function draw_goalnets(color, thickness){
     
 }
 
-function draw_player_lines(color, thickness){
+async function draw_player_lines(color, thickness){
     const x = state.image_x;
     const y = state.image_y;
     const scale = state.image_scale;
+
+    // send to the server the 4 lower keypoints and the interested point
+    const response = await fetch("/get-player-lines", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            keypoints: state.prediction.keypoints[0],
+        })
+    });
+    // there can be an error, like ...
+    if (!response.ok) {
+        const err = await response.json();
+        console.log(err.error, "Server error");
+        return;
+    }
+
+    const data = await response.json();
+    const player_lines = data.player_lines;
+
+    pctx.fillStyle = color;
+
+    for(let i = 0; i < player_lines.length; i++){
+        draw_edge(player_lines[i][0], player_lines[i][1], color, thickness);
+    }
+
 }
 
 // --------------------------------------------------------
 
-export function draw(){
+export async function draw(){
     
     // clear the canvas
     pctx.fillStyle = "rgb(230, 230, 230)";
@@ -178,7 +205,7 @@ export function draw(){
 
     // show player lines
     if(state.show_player_lines){
-        draw_player_lines("gray", 3);
+        await draw_player_lines("yellow", 3);
     }
 
     // show bounding box
@@ -188,6 +215,6 @@ export function draw(){
 
     // show keypoints
     if(state.show_keypoints){
-        draw_keypoints("red", 5);
+        draw_keypoints("orange", 5);
     }
 }

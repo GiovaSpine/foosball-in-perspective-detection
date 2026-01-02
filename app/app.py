@@ -3,7 +3,7 @@ from ultralytics import YOLO
 import os
 from pathlib import Path
 import uuid
-from algorithms.point_translation import *
+from algorithms.algorithms import *
 
 
 
@@ -98,6 +98,29 @@ def translate_position():
 
     return jsonify({
         "translated_point": translated_point,
+    })
+
+
+@app.route("/get-player-lines", methods=["POST"])
+def get_player_lines():
+    # we receive all the keypoints
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "No JSON body"}), 400
+
+    keypoints = data.get("keypoints")
+
+    if not keypoints:
+        return jsonify({"error": "Missing data"}), 400
+    
+    player_lines, error = calculate_player_lines(keypoints)
+
+    if error:
+        return jsonify(error=error), 422
+
+    return jsonify({
+        "player_lines": player_lines,
     })
 
 
