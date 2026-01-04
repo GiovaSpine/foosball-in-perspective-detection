@@ -1,5 +1,5 @@
 import { photo_canvas, pctx, reference_canvas, rctx, state } from "./predict_script.js";
-import { colors } from "./predict_config.js";
+import { colors, icons } from "./config.js";
 
 
 export function image_position_and_scale(image_width, image_height, canvas_width, canvas_height){
@@ -164,6 +164,8 @@ async function draw_player_lines(color, thickness){
 
 // --------------------------------------------------------
 
+
+
 export async function draw_photo(){
     
     // clear the canvas
@@ -205,22 +207,68 @@ export async function draw_photo(){
     }
 }
 
+// --------------------------------------------------------
 
+function load_image(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+    });
+}
 
-export function draw_reference(translated_point, radius=8){
+let grid_image = null;
 
-    // clear the canvas
+export async function draw_grid() {
+    if (!grid_image) {
+        grid_image = await load_image(icons.grid_path);
+    }
+
+    // clear canvas
     rctx.fillStyle = colors.reference_canvas_color;
     rctx.fillRect(0, 0, reference_canvas.width, reference_canvas.height);
 
+    rctx.drawImage(
+        grid_image,
+        0, 0,
+        reference_canvas.width,
+        reference_canvas.height
+    );
+}
+
+let coordinate_system_image = null;
+
+export async function draw_coordinate_system() {
+    if (!coordinate_system_image) {
+        coordinate_system_image = await load_image(icons.coordinate_system_path);
+    }
+
+    rctx.drawImage(
+        coordinate_system_image,
+        0, 0,
+        reference_canvas.width,
+        reference_canvas.height
+    );
+}
+
+export async function draw_reference() {
+    await draw_grid();
+    await draw_coordinate_system();
+}
+
+export async function draw_translated_point(translated_point, radius=8){
+
+    await draw_grid();
+
     rctx.fillStyle = colors.translated_point_color;
 
-    // convert to canvas position
-    //const x = translated_point[0] * reference_canvas.width;
-    const x = (reference_canvas.width / 2.0) + (translated_point[0] * (reference_canvas.width / 2.0));
-    const y = (reference_canvas.height / 2.0) - (translated_point[1] * (reference_canvas.height / 2.0));
+    const x = (reference_canvas.width / 2) + translated_point[0] * (reference_canvas.width / 2);
+    const y = (reference_canvas.height / 2) - translated_point[1] * (reference_canvas.height / 2);
 
     rctx.beginPath();
     rctx.arc(x, y, radius, 0, Math.PI * 2);
     rctx.fill();
+
+    await draw_coordinate_system();
 }

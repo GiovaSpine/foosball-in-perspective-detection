@@ -29,7 +29,7 @@
 .main_layout {
     display: flex;
     flex-direction: row;
-    gap: 15px;
+    gap: 0px;
     width: 100%;
     aspect-ratio: 2.5;
     height: auto;

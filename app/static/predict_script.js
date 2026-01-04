@@ -1,7 +1,7 @@
-import { image_position_and_scale, draw_photo, draw_reference } from "./image_renderer.js"
+import { image_position_and_scale, draw_photo, draw_reference, draw_translated_point } from "./image_renderer.js"
 import { wait_for_click_or_escape } from "./events.js";
 import { page_pos_to_canvas_pos, canvas_pos_to_image_pos } from "./utils.js";
-import { colors } from "./predict_config.js";
+import { colors } from "./config.js";
 
 const photo_input = document.getElementById("photo_input");
 export const photo_canvas = document.getElementById("photo_canvas");
@@ -20,8 +20,7 @@ reference_canvas.height = rect2.height;
 // canvas color
 pctx.fillStyle = colors.photo_canvas_color;
 pctx.fillRect(0, 0, photo_canvas.width, photo_canvas.height);
-rctx.fillStyle = colors.reference_canvas_color;
-rctx.fillRect(0, 0, reference_canvas.width, reference_canvas.height);
+draw_reference();
 
 // button functions
 window.show_keypoints = show_keypoints;
@@ -68,6 +67,9 @@ if (sessionStorage.getItem("photo")) {
 
 photo_input.addEventListener("change", async (e) => {
   // the user chose a photo
+
+  // reset the reference canvas if there were translated point
+  draw_reference();
 
   const file = e.target.files[0];
   if (!file) return;
@@ -258,7 +260,7 @@ async function translate_position(){
   const translated_point = data.translated_point;
   console.log(translated_point);
 
-  draw_reference(translated_point);
+  draw_translated_point(translated_point)
 
   quit_translate_position();
 }
