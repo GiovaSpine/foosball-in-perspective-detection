@@ -1,5 +1,5 @@
-import { photo_canvas, pctx, state } from "./predict_script.js";
-
+import { photo_canvas, pctx, reference_canvas, rctx, state } from "./predict_script.js";
+import { colors } from "./predict_config.js";
 
 
 export function image_position_and_scale(image_width, image_height, canvas_width, canvas_height){
@@ -17,7 +17,6 @@ export function image_position_and_scale(image_width, image_height, canvas_width
 }
 
 // --------------------------------------------------------
-
 
 
 function draw_keypoints(color, radius){
@@ -110,9 +109,9 @@ function draw_edge(A, B, color, thickness){
 
 function draw_edges(thickness){
     const kps = state.prediction.keypoints[0];
-    const x_axis_color = "red";
-    const y_axis_color = "rgb(0, 255, 0)";
-    const z_axis_color = "blue";
+    const x_axis_color = colors.x_axis_color;
+    const y_axis_color = colors.y_axis_color;
+    const z_axis_color = colors.z_axis_color;
 
     draw_edge(kps[0], kps[1], x_axis_color, thickness);
     draw_edge(kps[2], kps[3], x_axis_color, thickness);
@@ -128,14 +127,6 @@ function draw_edges(thickness){
     draw_edge(kps[1], kps[5], z_axis_color, thickness);
     draw_edge(kps[2], kps[6], z_axis_color, thickness);
     draw_edge(kps[3], kps[7], z_axis_color, thickness);
-}
-
-function draw_goalnets(color, thickness){
-    const x = state.image_x;
-    const y = state.image_y;
-    const scale = state.image_scale;
-
-    
 }
 
 async function draw_player_lines(color, thickness){
@@ -173,10 +164,10 @@ async function draw_player_lines(color, thickness){
 
 // --------------------------------------------------------
 
-export async function draw(){
+export async function draw_photo(){
     
     // clear the canvas
-    pctx.fillStyle = "rgb(230, 230, 230)";
+    pctx.fillStyle = colors.photo_canvas_color;
     pctx.fillRect(0, 0, photo_canvas.width, photo_canvas.height);
 
     // draw the photo on the canvas
@@ -190,7 +181,7 @@ export async function draw(){
 
     // show play area
     if(state.show_play_area){
-        draw_play_area("rgba(255, 0, 255, 0.4)");
+        draw_play_area(colors.play_area_color);
     }
     
     // show edges
@@ -198,23 +189,38 @@ export async function draw(){
         draw_edges(3);
     }
 
-    // show goalnets
-    if(state.show_goalnets){
-        draw_goalnets("yellow", 3);
-    }
-
     // show player lines
     if(state.show_player_lines){
-        await draw_player_lines("yellow", 3);
+        await draw_player_lines(colors.player_lines_color, 3);
     }
 
     // show bounding box
     if(state.show_bounding_box){
-        draw_bounding_box("red", 3);
+        draw_bounding_box(colors.bounding_box_color, 3);
     }
 
     // show keypoints
     if(state.show_keypoints){
-        draw_keypoints("orange", 5);
+        draw_keypoints(colors.keypoint_color, 5);
     }
+}
+
+
+
+export function draw_reference(translated_point, radius=8){
+
+    // clear the canvas
+    rctx.fillStyle = colors.reference_canvas_color;
+    rctx.fillRect(0, 0, reference_canvas.width, reference_canvas.height);
+
+    rctx.fillStyle = colors.translated_point_color;
+
+    // convert to canvas position
+    //const x = translated_point[0] * reference_canvas.width;
+    const x = (reference_canvas.width / 2.0) + (translated_point[0] * (reference_canvas.width / 2.0));
+    const y = (reference_canvas.height / 2.0) - (translated_point[1] * (reference_canvas.height / 2.0));
+
+    rctx.beginPath();
+    rctx.arc(x, y, radius, 0, Math.PI * 2);
+    rctx.fill();
 }

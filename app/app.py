@@ -69,7 +69,6 @@ def predict():
         for kp_conf in result.keypoints.conf:
             keypoints.append(kp_conf.tolist())
 
-
     return jsonify({
         "keypoints": keypoints,
         "bounding_boxes": bounding_boxes,
@@ -121,6 +120,29 @@ def get_player_lines():
 
     return jsonify({
         "player_lines": player_lines,
+    })
+
+
+@app.route("/clean-keypoints", methods=["POST"])
+def clean_keypoints():
+    # we receive all the keypoints
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "No JSON body"}), 400
+
+    keypoints = data.get("keypoints")
+
+    if not keypoints:
+        return jsonify({"error": "Missing data"}), 400
+    
+    keypoints, error = keypoints_cleaning(keypoints)
+
+    if error:
+        return jsonify(error=error), 422
+
+    return jsonify({
+        "keypoints": keypoints,
     })
 
 

@@ -1,28 +1,33 @@
-import { image_position_and_scale, draw, } from "./image_renderer.js"
+import { image_position_and_scale, draw_photo, draw_reference } from "./image_renderer.js"
 import { wait_for_click_or_escape } from "./events.js";
 import { page_pos_to_canvas_pos, canvas_pos_to_image_pos } from "./utils.js";
+import { colors } from "./predict_config.js";
 
 const photo_input = document.getElementById("photo_input");
 export const photo_canvas = document.getElementById("photo_canvas");
 export const pctx = photo_canvas.getContext("2d");
-// const reference_canvas = document.getElementById("reference_canvas");
-// export const rctx = photo_canvas.getContext("2d");
+export const reference_canvas = document.getElementById("reference_canvas");
+export const rctx = reference_canvas.getContext("2d");
 
 // set canvas size
-const rect = photo_canvas.getBoundingClientRect();
-photo_canvas.width = rect.width;
-photo_canvas.height = rect.height;
+const rect1 = photo_canvas.getBoundingClientRect();
+photo_canvas.width = rect1.width;
+photo_canvas.height = rect1.height;
+const rect2 = reference_canvas.getBoundingClientRect();
+reference_canvas.width = rect2.width;
+reference_canvas.height = rect2.height;
 
 // canvas color
-pctx.fillStyle = "rgb(230, 230, 230)";
+pctx.fillStyle = colors.photo_canvas_color;
 pctx.fillRect(0, 0, photo_canvas.width, photo_canvas.height);
+rctx.fillStyle = colors.reference_canvas_color;
+rctx.fillRect(0, 0, reference_canvas.width, reference_canvas.height);
 
 // button functions
 window.show_keypoints = show_keypoints;
 window.show_bounding_box = show_bounding_box;
 window.show_play_area = show_play_area;
 window.show_edges = show_edges;
-window.show_goalnets = show_goalnets;
 window.show_player_lines = show_player_lines;
 window.translate_position = translate_position;
 
@@ -37,9 +42,7 @@ export let state = {
   show_bounding_box: false,
   show_play_area: false,
   show_edges: false,
-  show_goalnets: false,
   show_player_lines: false,
-  show_play_area: false,
 }
 
 // ========================================================
@@ -58,7 +61,7 @@ if (sessionStorage.getItem("photo")) {
     state.image_x = x;
     state.image_y = y;
     state.image_scale = scale;
-    draw(state);
+    draw_photo(state);
   }
 }
 
@@ -81,14 +84,35 @@ photo_input.addEventListener("change", async (e) => {
   formData.append("photo", file);
 
   // receive the prediction
-  const response = await fetch("/predict", {
+  const response1 = await fetch("/predict", {
     method: "POST",
     body: formData
   });
 
-  state.prediction = await response.json();
-  console.log(state.prediction);
-
+  let prediction = await response1.json();
+  console.log(prediction);
+  
+  if(prediction.keypoints.length != 0){
+    // let's use the clean keypoints API
+    const response2 = await fetch("/clean-keypoints", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            keypoints: prediction.keypoints[0],
+        })
+    });
+    if (!response2.ok) {
+        const err = await response2.json();
+        console.log(err.error, "Server error");
+        return;
+    }
+    const cleaned_keypoints = await response2.json();
+    prediction.keypoints[0] = cleaned_keypoints.keypoints;
+  }
+  state.prediction = prediction;
+  
   // save the prediction in the session
   sessionStorage.setItem("prediction", JSON.stringify(state.prediction));
 
@@ -100,7 +124,7 @@ photo_input.addEventListener("change", async (e) => {
     state.image_x = x;
     state.image_y = y;
     state.image_scale = scale;
-    draw(state);
+    draw_photo(state);
   };
   state.photo.src = url;
 });
@@ -108,64 +132,55 @@ photo_input.addEventListener("change", async (e) => {
 // --------------------------------------------------------
 // BUTTON FUNCTIONS
 
-function show_keypoints(){
+function check_photo_and_prediction(){
   if(state.photo == null){
     // there is no image
-    return;
+    return false;
   }
+  if(state.prediction.keypoints.length == 0){
+    // no valid prediction
+    return false;
+  }
+  return true;
+}
+
+function show_keypoints(){
+  if(!check_photo_and_prediction()) return;
   if(state.show_keypoints) state.show_keypoints = false;
   else state.show_keypoints = true;
-  draw();
+  draw_photo();
 }
+
 
 function show_bounding_box(){
-  if(state.photo == null){
-    // there is no image
-    return;
-  }
+  if(!check_photo_and_prediction()) return;
   if(state.show_bounding_box) state.show_bounding_box = false;
   else state.show_bounding_box = true;
-  draw();
+  draw_photo();
 }
+
 
 function show_play_area(){
-  if(state.photo == null){
-    // there is no image
-    return;
-  }
+  if(!check_photo_and_prediction()) return;
   if(state.show_play_area) state.show_play_area = false;
   else state.show_play_area = true;
-  draw();
+  draw_photo();
 }
+
 
 function show_edges(){
-  if(state.photo == null){
-    // there is no image
-    return;
-  }
+  if(!check_photo_and_prediction()) return;
   if(state.show_edges) state.show_edges = false;
   else state.show_edges = true;
-  draw();
+  draw_photo();
 }
 
-function show_goalnets(){
-  if(state.photo == null){
-    // there is no image
-    return;
-  }
-  if(state.show_goalnets) state.show_goalnets = false;
-  else state.show_goalnets = true;
-  draw();
-}
 
-function show_player_lines(){
-  if(state.photo == null){
-    // there is no image
-    return;
-  }
+async function show_player_lines(){
+  if(!check_photo_and_prediction()) return;
   if(state.show_player_lines) state.show_player_lines = false;
   else state.show_player_lines = true;
-  draw();
+  draw_photo();
 }
 
 
@@ -176,21 +191,13 @@ function enable_buttons(enable){
   document.getElementById("show_bounding_box").disabled = !enable;
   document.getElementById("show_play_area").disabled = !enable;
   document.getElementById("show_edges").disabled = !enable;
-  document.getElementById("show_goalnets").disabled = !enable;
   document.getElementById("show_player_lines").disabled = !enable;
   document.getElementById("translate_position").disabled = !enable;
 }
 
+
 async function translate_position(){
-  if(state.photo == null){
-    // there is no image
-    return;
-  }
-  // check if the model's prediction contains keypoints
-  if(state.prediction.keypoints.length == 0){
-    // the model wasn't able to find any keypoint
-    return;
-  }
+  if(!check_photo_and_prediction()) return;
 
   // block all buttons
   enable_buttons(false);
@@ -203,13 +210,13 @@ async function translate_position(){
   } else {
     // the play area was off
     state.show_play_area = true;
-    draw();
+    draw_photo();
   }
 
   function quit_translate_position(){
     if(delete_play_area){
       state.show_play_area = false;
-      draw();
+      draw_photo();
     }
     // enable all buttons
     enable_buttons(true);
@@ -250,6 +257,8 @@ async function translate_position(){
   const data = await response.json();
   const translated_point = data.translated_point;
   console.log(translated_point);
+
+  draw_reference(translated_point);
 
   quit_translate_position();
 }

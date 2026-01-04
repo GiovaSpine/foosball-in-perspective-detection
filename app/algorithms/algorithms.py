@@ -83,7 +83,7 @@ def calculate_intersection(line1: tuple, line2: tuple) -> tuple:
 
 # ---------------------------------------------------------
 
-def translate_point(point: list, lower_keypoints: list, max_iterations: int=100) -> list:
+def translate_point(point: list, lower_keypoints: list, max_iterations: int=100) -> tuple:
     '''
     Docstring for translate_point
     
@@ -205,7 +205,7 @@ def translate_point(point: list, lower_keypoints: list, max_iterations: int=100)
     return translated_point, None
 
 
-def calculate_player_lines(keypoints: list) -> list:
+def calculate_player_lines(keypoints: list) -> tuple:
     '''
     Docstring for calculate_player_lines
     
@@ -215,15 +215,20 @@ def calculate_player_lines(keypoints: list) -> list:
     :rtype: list
     '''
 
-    # we have to divide the face given by the keypoints 0, 3, 7, 4
-    # and the face given by the keypoints 1, 2, 6, 5
+    if not is_convex_quadrilateral([keypoints[0], keypoints[4], keypoints[7], keypoints[3]]):
+        return None, "The quadrilateral of the left side is not convex"
+    
+    if not is_convex_quadrilateral([ keypoints[5], keypoints[1], keypoints[2], keypoints[6]]):
+        return None, "The quadrilateral of the right side is not convex"
 
-    n_division = 3
+    # we have to divide the face given by the keypoints 0, 3, 4, 7 (and 1, 2, 5, 6) into 8 parts
+    # we will do it by finding centers, to follow the perspective
+
+    N_DIVISIONS = 3
 
     vp_z_1 = calculate_intersection((keypoints[0], keypoints[4]), (keypoints[1], keypoints[5]))
     vp_z_2 = calculate_intersection((keypoints[3], keypoints[7]), (keypoints[2], keypoints[6]))
-    # vanishing_point_z_1 should in theory be equal to vanishing_point_z_2
-    # in practice we take the average
+    # vanishing_point_z_1 should in theory be equal to vanishing_point_z_2; in practice we take the average
     vanishing_point_z = ((vp_z_1[0] + vp_z_2[0]) / 2.0, (vp_z_1[1] + vp_z_2[1]) / 2.0)
 
     def get_center(centers, iteration, v0, v1, v2, v3):
@@ -240,17 +245,21 @@ def calculate_player_lines(keypoints: list) -> list:
         upper_side_center = calculate_intersection((center, vanishing_point_z), (v0, v3))
         lower_side_center = calculate_intersection((center, vanishing_point_z), (v1, v2))
 
-        if iteration < n_division:
+        if iteration < N_DIVISIONS:
             get_center(centers, iteration + 1, v0, v1, lower_side_center, upper_side_center)
             get_center(centers, iteration + 1, upper_side_center, lower_side_center, v2, v3)
         else:
+            # we reached the desired level
             centers.append(center)
 
     centers_face_1 = []
     centers_face_2 = []
+    # left face given by 0, 3, 4, 7 keypoints
     get_center(centers_face_1, 0, keypoints[0], keypoints[4], keypoints[7], keypoints[3])
+    # right face given by 1, 2, 5, 6
     get_center(centers_face_2, 0, keypoints[5], keypoints[1], keypoints[2], keypoints[6])
 
+    # player lines is a list formed by [p1, p2] where p1 is the point of the left face, and p2 of the right face
     player_lines = [[p1, p2] for p1, p2 in zip(centers_face_1, centers_face_2)]
 
     return player_lines, None
@@ -266,3 +275,77 @@ keypoints = [[ 154.50550842285156, 55.66485595703125 ],
 [ 136.05929565429688, 173.65614318847656 ]]
 calculate_player_lines(keypoints)
 """
+
+def keypoints_cleaning(keypoints):
+
+    # we will assume that the vanishing point for the z axis given by the lines 0_4 and 1_5 is correct
+    # then we will check if the lines 2_6 and 3_7 tends to go towards that vanshing point
+
+    vp_z_1 = calculate_intersection((keypoints[0], keypoints[4]), (keypoints[1], keypoints[5]))
+    vp_z_2 = calculate_intersection((keypoints[2], keypoints[5]), (keypoints[6], keypoints[7]))
+
+    MAX_VPS_Z_DISTANCE = 2500
+    
+    if np.linalg.norm(np.array(vp_z_1) - vp_z_2) > MAX_VPS_Z_DISTANCE:
+        # considering vp_z_1 correct
+        # we have to recompute the keypoint 6 and 7
+
+        vp_y = calculate_intersection((keypoints[0], keypoints[3]), (keypoints[1], keypoints[2]))
+        vp_x = calculate_intersection((keypoints[0], keypoints[1]), (keypoints[2], keypoints[3]))
+
+        MIN_DEGREES_DIFFERENCE = 5.0
+
+        # for the keypoint 6 the idea is to:
+        # find the intersection between the line that goes from 5 to vp_y and the line that goes from 2 to vp_z_1
+
+        vector_6_to_z = np.array(vp_z_1) - np.array(keypoints[6])
+        vector_6_to_z_degrees = np.degrees(np.arctan2(vector_6_to_z[1], vector_6_to_z[0]))
+
+        vector_5_to_y = np.array(keypoints[5]) - np.array(vp_y)
+        vector_5_to_y_degrees = np.degrees(np.arctan2(vector_5_to_y[1], vector_5_to_y[0]))
+
+        if abs(vector_6_to_z_degrees - vector_5_to_y_degrees) < MIN_DEGREES_DIFFERENCE:
+            # the angles are to similar (the two lines are similar)
+            # it happens when the face on the right side is barely visible
+            # we can find the intersection between the line that goes from 7 to vp_x and the line that goes from 2 to vp_z_1
+            new_keypoint_6 = calculate_intersection((keypoints[7], vp_x), (keypoints[2], vp_z_1))
+        else:
+            # we can compute with the intersection between the line that goes from 5 to vp_y and the line that goes from 2 to vp_z_1
+            new_keypoint_6 = calculate_intersection((keypoints[5], vp_y), (keypoints[2], vp_z_1))
+
+        # for the keypoint 7 the idea is to:
+        # find the intersection between the line that goes from 4 to vp_y and the line that goes from 3 to vp_z_1
+
+        vector_7_to_z = np.array(vp_z_1) - np.array(keypoints[7])
+        vector_7_to_z_degrees = np.degrees(np.arctan2(vector_7_to_z[1], vector_7_to_z[0]))
+
+        vector_4_to_y = np.array(keypoints[4]) - np.array(vp_y)
+        vector_4_to_y_degrees = np.degrees(np.arctan2(vector_4_to_y[1], vector_4_to_y[0]))
+
+        if abs(vector_7_to_z_degrees - vector_4_to_y_degrees) < MIN_DEGREES_DIFFERENCE:
+            # the angles are to similar (the two lines are similar)
+            # it happens when the face on the right side is barely visible
+            # we can find the intersection between the line that goes from 6 to vp_x and the line that goes from 3 to vp_z_1
+            new_keypoint_7 = calculate_intersection((keypoints[6], vp_x), (keypoints[3], vp_z_1))
+        else:
+            # we can compute with the intersection between the line that goes from 4 to vp_y and the line that goes from 3 to vp_z_1
+            new_keypoint_7 = calculate_intersection((keypoints[4], vp_y), (keypoints[3], vp_z_1))
+ 
+        keypoints[6] = new_keypoint_6
+        keypoints[7] = new_keypoint_7
+
+        print(keypoints[6], keypoints[7])
+
+    return keypoints, None
+
+
+keypoints = [[ 463.697509765625, 419.3145446777344 ],
+[ 773.24658203125, 437.58746337890625 ],
+[ 744.9722900390625, 710.0902099609375 ],
+[ 176.0430908203125, 632.8010864257812 ],
+[ 462.40216064453125, 466.0550537109375 ],
+[ 767.7553100585938, 488.25341796875 ],
+[ 734.0112915039062, 720 ],
+[ 183.5186767578125, 715.59912109375 ]]
+
+keypoints_cleaning(keypoints)
