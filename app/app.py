@@ -34,6 +34,12 @@ def guide():
     '''guide'''
     return render_template("guide.html")
 
+
+@app.route("/predict/choose-from-samples")
+def choose_from_samples():
+    '''choose-from-samples'''
+    return render_template("choose_sample.html")
+
 @app.route("/predict", methods=["GET", "POST"])
 def predict():
     '''predict'''

@@ -32,6 +32,9 @@ export function wait_for_click(ignore_first_click = false) {
 
 export function wait_for_click_or_escape(ignore_first_click = false) {
   return new Promise((resolve) => {
+
+    photo_canvas.style.cursor = "crosshair";
+
     let ignored = !ignore_first_click;
 
     function click_handler(e) {
@@ -62,6 +65,7 @@ export function wait_for_click_or_escape(ignore_first_click = false) {
     function cleanup() {
       photo_canvas.removeEventListener("click", click_handler);
       window.removeEventListener("keydown", key_handler);
+      photo_canvas.style.cursor = "default";
     }
 
     photo_canvas.addEventListener("click", click_handler);

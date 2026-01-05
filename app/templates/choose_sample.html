@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+<!-- ========================================================================== -->
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='choose_sample_style.css') }}">
+{% endblock %}
+
+<!-- ========================================================================== -->
+
+{% block content %}
+    <h2 style="text-align:center;">Choose a photo</h2>
+
+    <p style="text-align: center;">
+        These photos were <strong>not</strong> seen during training.
+    </p>
+
+    <table>
+        <tr>
+            <td>
+                <img src="/static/images/samples/sample1.jpg">
+                <button onclick="choose_image('/static/images/samples/sample1.jpg')">Choose</button>
+            </td>
+            <td>
+                <img src="/static/images/samples/sample1.jpg">
+                <button onclick="choose_image('/static/images/samples/sample1.jpg')">Choose</button>
+            </td>
+            <td>
+                <img src="/static/images/samples/sample1.jpg">
+                <button onclick="choose_image('/static/images/samples/sample1.jpg')">Choose</button>
+            </td>
+            <td>
+                <img src="/static/images/samples/sample1.jpg">
+                <button onclick="choose_image('/static/images/samples/sample1.jpg')">Choose</button>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <img src="/static/images/samples/sample1.jpg">
+                <button onclick="choose_image('/static/images/samples/sample1.jpg')">Choose</button>
+            </td>
+            <td>
+                <img src="/static/images/samples/sample1.jpg">
+                <button onclick="choose_image('/static/images/samples/sample1.jpg')">Choose</button>
+            </td>
+            <td>
+                <img src="/static/images/samples/sample1.jpg">
+                <button onclick="choose_image('/static/images/samples/sample1.jpg')">Choose</button>
+            </td>
+            <td>
+                <img src="/static/images/samples/sample1.jpg">
+                <button onclick="choose_image('/static/images/samples/sample1.jpg')">Choose</button>
+            </td>
+        </tr>
+    </table>
+
+{% endblock %}
+
+<!-- ========================================================================== -->
+
+{% block scripts %}
+    <script type="module" src="{{ url_for('static', filename='choose_sample_script.js') }}"></script>
+{% endblock %}

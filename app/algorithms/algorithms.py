@@ -264,17 +264,6 @@ def calculate_player_lines(keypoints: list) -> tuple:
 
     return player_lines, None
 
-"""
-keypoints = [[ 154.50550842285156, 55.66485595703125 ],
-[ 240.74415588378906, 53.13665771484375 ],
-[ 271.59075927734375, 153.83486938476562 ],
-[ 132.1214141845703, 156.548095703125 ],
-[ 155.8950958251953, 69.52552795410156 ],
-[ 240.4196014404297, 66.28471374511719 ],
-[ 268.8418884277344, 170.04718017578125 ],
-[ 136.05929565429688, 173.65614318847656 ]]
-calculate_player_lines(keypoints)
-"""
 
 def keypoints_cleaning(keypoints):
 
@@ -284,7 +273,7 @@ def keypoints_cleaning(keypoints):
     vp_z_1 = calculate_intersection((keypoints[0], keypoints[4]), (keypoints[1], keypoints[5]))
     vp_z_2 = calculate_intersection((keypoints[2], keypoints[5]), (keypoints[6], keypoints[7]))
 
-    MAX_VPS_Z_DISTANCE = 2500
+    MAX_VPS_Z_DISTANCE = 2500  # found empirically
     
     if np.linalg.norm(np.array(vp_z_1) - vp_z_2) > MAX_VPS_Z_DISTANCE:
         # considering vp_z_1 correct
@@ -337,15 +326,3 @@ def keypoints_cleaning(keypoints):
         print(keypoints[6], keypoints[7])
 
     return keypoints, None
-
-
-keypoints = [[ 463.697509765625, 419.3145446777344 ],
-[ 773.24658203125, 437.58746337890625 ],
-[ 744.9722900390625, 710.0902099609375 ],
-[ 176.0430908203125, 632.8010864257812 ],
-[ 462.40216064453125, 466.0550537109375 ],
-[ 767.7553100585938, 488.25341796875 ],
-[ 734.0112915039062, 720 ],
-[ 183.5186767578125, 715.59912109375 ]]
-
-keypoints_cleaning(keypoints)
