@@ -10,8 +10,9 @@ export const pctx = photo_canvas.getContext("2d");
 export const reference_canvas = document.getElementById("reference_canvas");
 export const rctx = reference_canvas.getContext("2d");
 
-// get message element
+// get message and image title element
 const message = document.getElementById("message");
+const image_title = document.getElementById("image_title");
 
 // set canvas size
 const rect1 = photo_canvas.getBoundingClientRect();
@@ -54,13 +55,15 @@ export let state = {
 
 if (sessionStorage.getItem("photo")) {
   // there is already a photo in the browser session
-  const photo_url = sessionStorage.getItem("photo");
+  const photo = JSON.parse(sessionStorage.getItem("photo"));
+
+  image_title.textContent = photo.name;
 
   // there is also the prediction
   state.prediction = JSON.parse(sessionStorage.getItem("prediction"));
 
   state.photo = new Image();
-  state.photo.src = photo_url;
+  state.photo.src = photo.data;
   state.photo.onload = () => {
     const [x, y, scale] = image_position_and_scale(state.photo.width, state.photo.height, photo_canvas.width, photo_canvas.height);
     state.image_x = x;
@@ -81,10 +84,15 @@ photo_input.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
+  image_title.textContent = file.name;
+
   // save the photo in the browser session
   const reader = new FileReader();
   reader.onload = () => {
-    sessionStorage.setItem("photo", reader.result);
+    sessionStorage.setItem("photo", JSON.stringify({
+        data: reader.result,
+        name: file.name
+    }));
   };
   reader.readAsDataURL(file);
 

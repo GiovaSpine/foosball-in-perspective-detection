@@ -8,6 +8,19 @@ form {
     margin-bottom: 10px;
 }
 
+.upload_link {
+    color: #1a73e8;
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.upload_link:hover {
+    text-decoration: underline;
+}
+
 input[type="file"] {
     padding: 6px;
 }
@@ -26,7 +39,7 @@ input[type="file"] {
 }
 
 hr {
-    margin: 20px 0;
+    margin: 15px 0;
     border: none;
     border-top: 2px solid #ddd;
 }
@@ -42,6 +55,14 @@ hr {
 /* (x * w) / h = 0.5, because we want the height to be double the x% of w */
 /* but ratio = w / h, so aspect-ratio has to be 0.5 / x */
 /* aspect-ratio = 2.5  */
+
+#image_title {
+    text-align: center;
+    font-weight: 500;
+    margin-bottom: 15px;
+    font-size: 1em;
+    color: #333;
+}
 
 .main_layout {
     display: flex;

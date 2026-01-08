@@ -16,8 +16,9 @@
     <h2>Predict</h2>
     
     <form method="POST" enctype="multipart/form-data">
-        <label for="image">Upload a photo:</label>
-        <input id="photo_input" type="file" name="image" accept="image/*">
+        <!-- Label stilizzata come link -->
+        <label for="photo_input" class="upload_link">Upload a photo</label>
+        <input id="photo_input" type="file" name="image" accept="image/*" style="display:none;">
     </form>
 
     <a class="choose_from_samples_buttons" href="{{ url_for('choose_from_samples') }}">Choose from samples</a>
@@ -25,6 +26,8 @@
     <hr>
 
     <!-- results visualization -->
+
+    <p id="image_title"></p>
 
     <div class="main_layout">
         <div class="button_panel">

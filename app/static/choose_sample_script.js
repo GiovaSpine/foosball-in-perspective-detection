@@ -3,17 +3,22 @@ console.log("Testing choose_sample_script");
 window.choose_image = choose_image;
 
 async function choose_image(image_url) {
-
+  
   // load image from server
   const response = await fetch(image_url);
   const blob = await response.blob();
 
-  const file = new File([blob], "chosen_image.jpg", { type: blob.type });
+  const filename = image_url.split("/").pop();
+
+  const file = new File([blob], filename, { type: blob.type });
 
   // save in browser session
   const reader = new FileReader();
   reader.onload = async () => {
-    sessionStorage.setItem("photo", reader.result);
+    sessionStorage.setItem("photo", JSON.stringify({
+        data: reader.result,
+        name: file.name
+    }));
 
     // send to backend
     const formData = new FormData();
