@@ -129,37 +129,12 @@ function draw_edges(thickness){
     draw_edge(kps[3], kps[7], z_axis_color, thickness);
 }
 
-async function draw_player_lines(color, thickness){
-    const x = state.image_x;
-    const y = state.image_y;
-    const scale = state.image_scale;
-
-    // send to the server the 4 lower keypoints and the interested point
-    const response = await fetch("/get-player-lines", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            keypoints: state.prediction.keypoints[0],
-        })
-    });
-    // there can be an error, like ...
-    if (!response.ok) {
-        const err = await response.json();
-        console.log(err.error, "Server error");
-        return;
-    }
-
-    const data = await response.json();
-    const player_lines = data.player_lines;
-
+function draw_player_lines(color, thickness){
     pctx.fillStyle = color;
 
-    for(let i = 0; i < player_lines.length; i++){
-        draw_edge(player_lines[i][0], player_lines[i][1], color, thickness);
+    for(let i = 0; i < state.player_lines.length; i++){
+        draw_edge(state.player_lines[i][0], state.player_lines[i][1], color, thickness);
     }
-
 }
 
 // --------------------------------------------------------
@@ -181,28 +156,28 @@ export async function draw_photo(){
         state.photo.height * state.image_scale
     );
 
-    // show play area
-    if(state.show_play_area){
+    // toggle play area
+    if(state.toggle_play_area){
         draw_play_area(colors.play_area_color);
     }
     
-    // show edges
-    if(state.show_edges){
+    // toggle edges
+    if(state.toggle_edges){
         draw_edges(3);
     }
 
-    // show player lines
-    if(state.show_player_lines){
-        await draw_player_lines(colors.player_lines_color, 3);
+    // toggle player lines
+    if(state.toggle_player_lines){
+        draw_player_lines(colors.player_lines_color, 3);
     }
 
-    // show bounding box
-    if(state.show_bounding_box){
+    // toggle bounding box
+    if(state.toggle_bounding_box){
         draw_bounding_box(colors.bounding_box_color, 3);
     }
 
-    // show keypoints
-    if(state.show_keypoints){
+    // toggle keypoints
+    if(state.toggle_keypoints){
         draw_keypoints(colors.keypoint_color, 5);
     }
 }

@@ -28,12 +28,27 @@
 
     <div class="main_layout">
         <div class="button_panel">
-            <button type="button" id="show_keypoints" onclick="show_keypoints()">show keypoints</button>
-            <button type="button" id="show_bounding_box" onclick="show_bounding_box()">show bounding box</button>
-            <button type="button" id="show_play_area" onclick="show_play_area()">show play area</button>
-            <button type="button" id="show_edges" onclick="show_edges()">show edges</button>
-            <button type="button" id="show_player_lines" onclick="show_player_lines()">show player lines</button>
-            <button type="button" id="translate_position" onclick="translate_position()">translate position</button>
+            <button id="toggle_keypoints" onclick="toggle_keypoints()">
+                <img class="icon" src="/static/images/icons/eye-hidden.svg">
+                <span>Keypoints</span>
+            </button>
+            <button type="button" id="toggle_bounding_box" onclick="toggle_bounding_box()">
+                <img class="icon" src="/static/images/icons/eye-hidden.svg">
+                <span>Bounding Box</span>
+            </button>
+            <button type="button" id="toggle_play_area" onclick="toggle_play_area()">
+                <img class="icon" src="/static/images/icons/eye-hidden.svg">
+                <span>Play Area</span>
+            </button>
+            <button type="button" id="toggle_edges" onclick="toggle_edges()">
+                <img class="icon" src="/static/images/icons/eye-hidden.svg">
+                <span>Edges</span>
+            </button>
+            <button type="button" id="toggle_player_lines" onclick="toggle_player_lines()">
+                <img class="icon" src="/static/images/icons/eye-hidden.svg">
+                <span>Player Lines</span>
+            </button>
+            <button type="button" id="translate_position" onclick="translate_position()">Translate Position</button>
             <p id="message"></p>
         </div>
         

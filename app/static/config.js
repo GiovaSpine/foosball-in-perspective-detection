@@ -16,5 +16,15 @@ export const colors = {
 
 export const icons = {
     grid_path: "./static/images/icons/Grid.svg",
-    coordinate_system_path: "./static/images/icons/Coordinate System.svg"
+    coordinate_system_path: "./static/images/icons/Coordinate System.svg",
+    eye_path: "./static/images/icons/eye.svg",
+    eye_hidden_path: "./static/images/icons/eye-hidden.svg",
+}
+
+
+export const messages = {
+    no_image_provided: "No image is provided.",
+    no_valid_prediction: "Invalid prediction: YOLO was not able to produce keypoints.\n(remember that the model requires an image of a foosball table in a spectator view)",
+    translate_position_instructions: "Select a point inside the highlighted area",
+    
 }

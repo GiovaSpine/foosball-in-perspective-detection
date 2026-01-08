@@ -70,7 +70,12 @@ hr {
     box-sizing: border-box;
 }
 
+
 .button_panel button {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 10px;
     border: none;
     border-radius: 6px;
@@ -79,6 +84,12 @@ hr {
     font-weight: 500;
     cursor: pointer;
     transition: background 0.2s ease;
+}
+
+.button_panel .icon {
+    width: 22px;
+    height: 22px;
+    pointer-events: none;
 }
 
 .button_panel button:hover {

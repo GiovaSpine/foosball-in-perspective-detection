@@ -1,7 +1,7 @@
 import { image_position_and_scale, draw_photo, draw_reference, draw_translated_point } from "./image_renderer.js"
 import { wait_for_click_or_escape } from "./events.js";
 import { page_pos_to_canvas_pos, canvas_pos_to_image_pos } from "./utils.js";
-import { colors } from "./config.js";
+import { colors, icons, messages } from "./config.js";
 
 // get canvas elements
 const photo_input = document.getElementById("photo_input");
@@ -27,25 +27,27 @@ pctx.fillRect(0, 0, photo_canvas.width, photo_canvas.height);
 draw_reference();
 
 // button functions
-window.show_keypoints = show_keypoints;
-window.show_bounding_box = show_bounding_box;
-window.show_play_area = show_play_area;
-window.show_edges = show_edges;
-window.show_player_lines = show_player_lines;
+window.toggle_keypoints = toggle_keypoints;
+window.toggle_bounding_box = toggle_bounding_box;
+window.toggle_play_area = toggle_play_area;
+window.toggle_edges = toggle_edges;
+window.toggle_player_lines = toggle_player_lines;
 window.translate_position = translate_position;
 
-// ...
+// state to store the current image, its rendering parameters on the canvas,
+// the latest model prediction, and visualization flags.
 export let state = {
   photo: null,
   image_x: 0,
   image_y: 0,
   image_scale: 1.0,
   prediction: null,
-  show_keypoints: false,
-  show_bounding_box: false,
-  show_play_area: false,
-  show_edges: false,
-  show_player_lines: false,
+  toggle_keypoints: false,
+  toggle_bounding_box: false,
+  toggle_play_area: false,
+  toggle_edges: false,
+  toggle_player_lines: false,
+  player_lines: null
 }
 
 // ========================================================
@@ -119,6 +121,29 @@ photo_input.addEventListener("change", async (e) => {
     prediction.keypoints[0] = cleaned_keypoints.keypoints;
   }
   state.prediction = prediction;
+
+  // check the prediction
+  if(state.prediction.keypoints.length == 0){
+    // no valid prediction
+    message.textContent = messages.no_valid_prediction;
+    // we can't visualize anything
+    state.toggle_keypoints = false;
+    state.toggle_bounding_box = false;
+    state.toggle_play_area = false;
+    state.toggle_edges = false;
+    state.toggle_player_lines = false;
+    update_icons();
+  }
+
+  // the user want to see update the player_lines, so we have to update them
+  if(state.toggle_player_lines){
+    // there can be an error, like one of the faces on the side is not convex
+    const result = await get_player_lines();
+    if(!result){
+      state.toggle_player_lines = false;
+      update_icons();
+    }
+  }
   
   // save the prediction in the session
   sessionStorage.setItem("prediction", JSON.stringify(state.prediction));
@@ -136,64 +161,171 @@ photo_input.addEventListener("change", async (e) => {
   state.photo.src = url;
 });
 
+
+async function get_player_lines(){
+  // we need to ask the server where are the player lines
+
+  // send to the server the 4 lower keypoints and the interested point
+  const response = await fetch("/get-player-lines", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        keypoints: state.prediction.keypoints[0],
+    })
+  });
+  // there can be an error, like ...
+  if (!response.ok) {
+    const err = await response.json();
+    message.textContent = "Error: " + err.error;
+    return false;
+  }
+
+  const data = await response.json();
+  const player_lines = data.player_lines;
+  state.player_lines = player_lines;
+  return true
+}
+
 // --------------------------------------------------------
 // BUTTON FUNCTIONS
+
+function update_icons(){
+
+  if(state.toggle_keypoints){
+    const button = document.getElementById("toggle_keypoints");
+    const icon = button.querySelector(".icon");
+    icon.src = icons.eye_path;
+  } else {
+    const button = document.getElementById("toggle_keypoints");
+    const icon = button.querySelector(".icon");
+    icon.src = icons.eye_hidden_path;
+  }
+
+  if(state.toggle_bounding_box){
+    const button = document.getElementById("toggle_bounding_box");
+    const icon = button.querySelector(".icon");
+    icon.src = icons.eye_path;
+  } else {
+    const button = document.getElementById("toggle_bounding_box");
+    const icon = button.querySelector(".icon");
+    icon.src = icons.eye_hidden_path;
+  }
+  
+  if(state.toggle_play_area){
+    const button = document.getElementById("toggle_play_area");
+    const icon = button.querySelector(".icon");
+    icon.src = icons.eye_path;
+  } else {
+    const button = document.getElementById("toggle_play_area");
+    const icon = button.querySelector(".icon");
+    icon.src = icons.eye_hidden_path;
+  }
+
+  if(state.toggle_edges){
+    const button = document.getElementById("toggle_edges");
+    const icon = button.querySelector(".icon");
+    icon.src = icons.eye_path;
+  } else {
+    const button = document.getElementById("toggle_edges");
+    const icon = button.querySelector(".icon");
+    icon.src = icons.eye_hidden_path;
+  }
+
+  if(state.toggle_player_lines){
+    const button = document.getElementById("toggle_player_lines");
+    const icon = button.querySelector(".icon");
+    icon.src = icons.eye_path;
+  } else {
+    const button = document.getElementById("toggle_player_lines");
+    const icon = button.querySelector(".icon");
+    icon.src = icons.eye_hidden_path;
+  }
+}
+
 
 function check_photo_and_prediction(){
   if(state.photo == null){
     // there is no image
-    message.textContent = "No image is provided";
+    message.textContent = messages.no_image_provided;
     return false;
   }
   if(state.prediction.keypoints.length == 0){
     // no valid prediction
-    message.textContent = "Invalid prediction: YOLO was not able to produce keypoints.\n(remember that the model requires an image of a foosball table in the spectator view)";
+    message.textContent = messages.no_valid_prediction;
     return false;
   }
   return true;
 }
 
-function show_keypoints(){
+
+function toggle_keypoints(){
   if(!check_photo_and_prediction()) return;
+
   message.textContent = "";
-  if(state.show_keypoints) state.show_keypoints = false;
-  else state.show_keypoints = true;
+
+  if(state.toggle_keypoints) state.toggle_keypoints = false;
+  else state.toggle_keypoints = true;
+
+  update_icons();
   draw_photo();
 }
 
 
-function show_bounding_box(){
+function toggle_bounding_box(){
   if(!check_photo_and_prediction()) return;
+
   message.textContent = "";
-  if(state.show_bounding_box) state.show_bounding_box = false;
-  else state.show_bounding_box = true;
+  
+  if(state.toggle_bounding_box) state.toggle_bounding_box = false;
+  else state.toggle_bounding_box = true;
+
+  update_icons();
   draw_photo();
 }
 
 
-function show_play_area(){
+function toggle_play_area(){
   if(!check_photo_and_prediction()) return;
+
   message.textContent = "";
-  if(state.show_play_area) state.show_play_area = false;
-  else state.show_play_area = true;
+
+  if(state.toggle_play_area) state.toggle_play_area = false;
+  else state.toggle_play_area = true;
+
+  update_icons();
   draw_photo();
 }
 
 
-function show_edges(){
+function toggle_edges(){
   if(!check_photo_and_prediction()) return;
+
   message.textContent = "";
-  if(state.show_edges) state.show_edges = false;
-  else state.show_edges = true;
+
+  if(state.toggle_edges) state.toggle_edges = false;
+  else state.toggle_edges = true;
+
+  update_icons();
   draw_photo();
 }
 
 
-async function show_player_lines(){
+async function toggle_player_lines(){
   if(!check_photo_and_prediction()) return;
+
   message.textContent = "";
-  if(state.show_player_lines) state.show_player_lines = false;
-  else state.show_player_lines = true;
+
+  if(state.toggle_player_lines) state.toggle_player_lines = false;
+  else {
+    state.toggle_player_lines = true;
+    // there can be an error, like one of the faces on the side is not convex
+    const result = await get_player_lines();
+    if(!result) state.toggle_player_lines = false;
+  }
+
+  update_icons();
   draw_photo();
 }
 
@@ -201,11 +333,11 @@ async function show_player_lines(){
 function enable_buttons(enable){
   // enable or disable all buttons
   document.getElementById("photo_input").disabled = !enable;
-  document.getElementById("show_keypoints").disabled = !enable;
-  document.getElementById("show_bounding_box").disabled = !enable;
-  document.getElementById("show_play_area").disabled = !enable;
-  document.getElementById("show_edges").disabled = !enable;
-  document.getElementById("show_player_lines").disabled = !enable;
+  document.getElementById("toggle_keypoints").disabled = !enable;
+  document.getElementById("toggle_bounding_box").disabled = !enable;
+  document.getElementById("toggle_play_area").disabled = !enable;
+  document.getElementById("toggle_edges").disabled = !enable;
+  document.getElementById("toggle_player_lines").disabled = !enable;
   document.getElementById("translate_position").disabled = !enable;
 }
 
@@ -213,25 +345,25 @@ function enable_buttons(enable){
 async function translate_position(){
   if(!check_photo_and_prediction()) return;
 
-  message.textContent = "Select a point inside the highlighted area";
+  message.textContent = messages.translate_position_instructions;
 
   // block all buttons
   enable_buttons(false);
 
   // draw the area to select the keypoint
   let delete_play_area = true;
-  if(state.show_play_area){
+  if(state.toggle_play_area){
     // the play area was already on, so this function shouldn't delete it
     delete_play_area = false;
   } else {
     // the play area was off
-    state.show_play_area = true;
+    state.toggle_play_area = true;
     draw_photo();
   }
 
   function quit_translate_position(){
     if(delete_play_area){
-      state.show_play_area = false;
+      state.toggle_play_area = false;
       draw_photo();
     }
     // enable all buttons
