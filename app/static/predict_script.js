@@ -3,11 +3,15 @@ import { wait_for_click_or_escape } from "./events.js";
 import { page_pos_to_canvas_pos, canvas_pos_to_image_pos } from "./utils.js";
 import { colors } from "./config.js";
 
+// get canvas elements
 const photo_input = document.getElementById("photo_input");
 export const photo_canvas = document.getElementById("photo_canvas");
 export const pctx = photo_canvas.getContext("2d");
 export const reference_canvas = document.getElementById("reference_canvas");
 export const rctx = reference_canvas.getContext("2d");
+
+// get message element
+const message = document.getElementById("message");
 
 // set canvas size
 const rect1 = photo_canvas.getBoundingClientRect();
@@ -67,6 +71,7 @@ if (sessionStorage.getItem("photo")) {
 
 photo_input.addEventListener("change", async (e) => {
   // the user chose a photo
+  message.textContent = "";
 
   // reset the reference canvas if there were translated point
   draw_reference();
@@ -137,10 +142,12 @@ photo_input.addEventListener("change", async (e) => {
 function check_photo_and_prediction(){
   if(state.photo == null){
     // there is no image
+    message.textContent = "No image is provided";
     return false;
   }
   if(state.prediction.keypoints.length == 0){
     // no valid prediction
+    message.textContent = "Invalid prediction: YOLO was not able to produce keypoints.\n(remember that the model requires an image of a foosball table in the spectator view)";
     return false;
   }
   return true;
@@ -148,6 +155,7 @@ function check_photo_and_prediction(){
 
 function show_keypoints(){
   if(!check_photo_and_prediction()) return;
+  message.textContent = "";
   if(state.show_keypoints) state.show_keypoints = false;
   else state.show_keypoints = true;
   draw_photo();
@@ -156,6 +164,7 @@ function show_keypoints(){
 
 function show_bounding_box(){
   if(!check_photo_and_prediction()) return;
+  message.textContent = "";
   if(state.show_bounding_box) state.show_bounding_box = false;
   else state.show_bounding_box = true;
   draw_photo();
@@ -164,6 +173,7 @@ function show_bounding_box(){
 
 function show_play_area(){
   if(!check_photo_and_prediction()) return;
+  message.textContent = "";
   if(state.show_play_area) state.show_play_area = false;
   else state.show_play_area = true;
   draw_photo();
@@ -172,6 +182,7 @@ function show_play_area(){
 
 function show_edges(){
   if(!check_photo_and_prediction()) return;
+  message.textContent = "";
   if(state.show_edges) state.show_edges = false;
   else state.show_edges = true;
   draw_photo();
@@ -180,6 +191,7 @@ function show_edges(){
 
 async function show_player_lines(){
   if(!check_photo_and_prediction()) return;
+  message.textContent = "";
   if(state.show_player_lines) state.show_player_lines = false;
   else state.show_player_lines = true;
   draw_photo();
@@ -200,6 +212,8 @@ function enable_buttons(enable){
 
 async function translate_position(){
   if(!check_photo_and_prediction()) return;
+
+  message.textContent = "Select a point inside the highlighted area";
 
   // block all buttons
   enable_buttons(false);
@@ -231,11 +245,13 @@ async function translate_position(){
   const e = await wait_for_click_or_escape();
   if(e == null){
     quit_translate_position();  // the user pressed esc
+    message.textContent = "";
     return;
   }
   const [cursur_x_canvas, cursur_y_canvas] = page_pos_to_canvas_pos(e.pageX, e.pageY);
   const [cursur_x_image, cursur_y_image] = canvas_pos_to_image_pos(cursur_x_canvas, cursur_y_canvas);
   const point = [cursur_x_image, cursur_y_image];
+  console.log(cursur_x_image, cursur_y_image);
 
   // send to the server the 4 lower keypoints and the interested point
   const response = await fetch("/translate-position", {
@@ -252,6 +268,7 @@ async function translate_position(){
   if (!response.ok) {
     const err = await response.json();
     console.log(err.error, "Server error");
+    message.textContent = "Error: " + err.error;
     quit_translate_position();
     return;
   }
@@ -263,5 +280,6 @@ async function translate_position(){
   draw_translated_point(translated_point)
 
   quit_translate_position();
+  message.textContent = "";
 }
 

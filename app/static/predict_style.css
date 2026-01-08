@@ -1,19 +1,35 @@
 
-#upload_image_form {
+
+form {
     display: flex;
-    flex-direction: row;
     justify-content: center;
-    gap: 20px;
-    width: fit-content;
-    text-align: left;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
 }
 
+input[type="file"] {
+    padding: 6px;
+}
 
-#upload_image_form button[type="submit"] {
+.choose_from_samples_buttons {
     display: block;
-    margin: 0 auto;
+    width: fit-content;
+    margin: 0 auto 10px auto;
+    text-decoration: none;
+    color: #1a73e8;
+    font-weight: 500;
 }
 
+.choose_from_samples_buttons:hover {
+    text-decoration: underline;
+}
+
+hr {
+    margin: 20px 0;
+    border: none;
+    border-top: 2px solid #ddd;
+}
 
 /* ============================================================================ */
 
@@ -25,15 +41,22 @@
 /* a foosball table have a ratio of 0.5 */
 /* (x * w) / h = 0.5, because we want the height to be double the x% of w */
 /* but ratio = w / h, so aspect-ratio has to be 0.5 / x */
+/* aspect-ratio = 2.5  */
 
 .main_layout {
     display: flex;
     flex-direction: row;
     gap: 0px;
     width: 100%;
+    margin: auto;
+    max-width: 85%;
     aspect-ratio: 2.5;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
     height: auto;
 }
+
+/* ======================= */
+/* BUTTONS */
 
 .button_panel {
     width: 15%;
@@ -49,8 +72,37 @@
 
 .button_panel button {
     padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background: rgb(64, 64, 255);
+    color: white;
+    font-weight: 500;
     cursor: pointer;
+    transition: background 0.2s ease;
 }
+
+.button_panel button:hover {
+    background: rgb(32, 32, 120);
+}
+
+.button_panel button:active {
+    transform: scale(0.98);
+}
+
+/* ======================= */
+/* MESSAGE */
+
+#message {
+    font-size: 14px;
+    text-align: center;
+    color: red;
+    padding: 10px;
+    margin-top: 8vh;
+    white-space: pre-line;
+}
+
+/* ======================= */
+/* CANVAS */
 
 #photo_canvas{
     width: 65%;

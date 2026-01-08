@@ -1,6 +1,8 @@
-* {
-    font-family: Arial, sans-serif;
+
+h2 {
+    text-align: center;
 }
+
 
 html, body {
     height: 100%;
@@ -8,12 +10,15 @@ html, body {
 }
 
 body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f6f7f9;
+    color: #222;
     display: flex;
     flex-direction: column;
 }
 
 header {
-    background: rgb(100, 100, 100);
+    background: rgb(32, 32, 120);
     color: white;
     padding: 1rem;
 }
@@ -24,7 +29,7 @@ main {
 }
 
 footer {
-    background: rgb(100, 100, 100);
+    background: rgb(32, 32, 120);
     color: white;
     padding: 1rem;
 }
@@ -32,10 +37,6 @@ footer {
 footer p{
     padding: 10px 20px;
     margin: 0;
-}
-
-h2 {
-    text-align: center;
 }
 
 .header_container {
