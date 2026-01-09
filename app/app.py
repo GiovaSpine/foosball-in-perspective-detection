@@ -96,10 +96,26 @@ def translate_position():
     if not lower_keypoints or not point:
         return jsonify({"error": "Missing data"}), 400
     
-    translated_point, error = translate_point(point, lower_keypoints)
+    try:
+        translated_point = translate_point(point, lower_keypoints)
 
-    if error:
-        return jsonify(error=error), 422
+    except NonConvexQuadrilateralError as e:
+        return jsonify(error=str(e)), 422
+
+    except PointOutsideQuadrilateralError as e:
+        return jsonify(error=str(e)), 422
+
+    except AlgorithmFailedError:
+        return jsonify(error="Unable to translate the point"), 500
+
+    except TypeError as e:
+        return jsonify(error=f"Input type error: {e}"), 400
+    
+    except ValueError as e:
+        return jsonify(error=f"Input value error: {e}"), 422
+
+    except Exception:
+        return jsonify(error="Unexpected error"), 500
 
     return jsonify({
         "translated_point": translated_point,
@@ -119,10 +135,23 @@ def get_player_lines():
     if not keypoints:
         return jsonify({"error": "Missing data"}), 400
     
-    player_lines, error = calculate_player_lines(keypoints)
+    try:
+        player_lines = calculate_player_lines(keypoints)
 
-    if error:
-        return jsonify(error=error), 422
+    except NonConvexQuadrilateralError as e:
+        return jsonify(error=str(e)), 422
+    
+    except AlgorithmFailedError as e:
+        return jsonify(error=str(e)), 500
+    
+    except TypeError as e:
+        return jsonify(error=f"Input type error: {e}"), 400
+    
+    except ValueError as e:
+        return jsonify(error=f"Input value error: {e}"), 422
+    
+    except Exception:
+        return jsonify(error="Unexpected error"), 500
 
     return jsonify({
         "player_lines": player_lines,
@@ -142,13 +171,23 @@ def clean_keypoints():
     if not keypoints:
         return jsonify({"error": "Missing data"}), 400
     
-    keypoints, error = keypoints_cleaning(keypoints)
+    try:
+        cleaned_keypoints = keypoints_cleaning(keypoints)
 
-    if error:
-        return jsonify(error=error), 422
+    except AlgorithmFailedError as e:
+        return jsonify(error=str(e)), 500
 
+    except TypeError as e:
+        return jsonify(error=f"Input type error: {e}"), 400
+    
+    except ValueError as e:
+        return jsonify(error=f"Input value error: {e}"), 422
+    
+    except Exception:
+        return jsonify(error="Unexpected error"), 500
+    
     return jsonify({
-        "keypoints": keypoints,
+        "keypoints": cleaned_keypoints,
     })
 
 

@@ -123,10 +123,12 @@ photo_input.addEventListener("change", async (e) => {
     if (!response2.ok) {
         const err = await response2.json();
         console.log(err.error, "Server error");
-        return;
+        message.textContent = "Error: " + err.error;
+    } else {
+      const cleaned_keypoints = await response2.json();
+      prediction.keypoints[0] = cleaned_keypoints.keypoints;
     }
-    const cleaned_keypoints = await response2.json();
-    prediction.keypoints[0] = cleaned_keypoints.keypoints;
+    
   }
   state.prediction = prediction;
 
@@ -187,7 +189,10 @@ async function get_player_lines(){
   if (!response.ok) {
     const err = await response.json();
     message.textContent = "Error: " + err.error;
+    console.log("ERRORE")
     return false;
+  } else {
+    console.log("NO ERRORE")
   }
 
   const data = await response.json();
