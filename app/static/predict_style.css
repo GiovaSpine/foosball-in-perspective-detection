@@ -1,0 +1,149 @@
+
+
+form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.upload_link {
+    color: #1a73e8;
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.upload_link:hover {
+    text-decoration: underline;
+}
+
+input[type="file"] {
+    padding: 6px;
+}
+
+.choose_from_samples_buttons {
+    display: block;
+    width: fit-content;
+    margin: 0 auto 10px auto;
+    text-decoration: none;
+    color: #1a73e8;
+    font-weight: 500;
+}
+
+.choose_from_samples_buttons:hover {
+    text-decoration: underline;
+}
+
+hr {
+    margin: 15px 0;
+    border: none;
+    border-top: 2px solid #ddd;
+}
+
+/* ============================================================================ */
+
+/* MAIN LAYOUT */
+
+/* ratio calculation */
+/* ratio = w / h */
+/* the right panel has a width of x% */
+/* a foosball table have a ratio of 0.5 */
+/* (x * w) / h = 0.5, because we want the height to be double the x% of w */
+/* but ratio = w / h, so aspect-ratio has to be 0.5 / x */
+/* aspect-ratio = 2.5  */
+
+#image_title {
+    text-align: center;
+    font-weight: 500;
+    margin-bottom: 15px;
+    font-size: 1em;
+    color: #333;
+}
+
+.main_layout {
+    display: flex;
+    flex-direction: row;
+    gap: 0px;
+    width: 100%;
+    margin: auto;
+    max-width: 85%;
+    aspect-ratio: 2.5;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
+    height: auto;
+}
+
+/* ======================= */
+/* BUTTONS */
+
+.button_panel {
+    width: 15%;
+    min-width: 160px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+
+.button_panel button {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background: rgb(64, 64, 255);
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.button_panel .icon {
+    width: 22px;
+    height: 22px;
+    pointer-events: none;
+}
+
+.button_panel button:hover {
+    background: rgb(32, 32, 120);
+}
+
+.button_panel button:active {
+    transform: scale(0.98);
+}
+
+/* ======================= */
+/* MESSAGE */
+
+#message {
+    font-size: 14px;
+    text-align: center;
+    color: red;
+    padding: 10px;
+    margin-top: 8vh;
+    white-space: pre-line;
+}
+
+/* ======================= */
+/* CANVAS */
+
+#photo_canvas{
+    width: 65%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+#reference_canvas {
+    width: 20%;
+    height: 100%;
+    box-sizing: border-box;
+}

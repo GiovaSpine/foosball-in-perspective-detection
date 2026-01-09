@@ -219,7 +219,7 @@ export async function draw_coordinate_system() {
         coordinate_system_image,
         0, 2,
         reference_canvas.width,
-        reference_canvas.height
+        reference_canvas.height - 2
     );
 }
 
