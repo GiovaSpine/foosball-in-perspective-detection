@@ -1,6 +1,105 @@
 {% extends "base.html" %}
 
+<!-- ========================================================================== -->
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='info_pages_style.css') }}">
+{% endblock %}
+
+<!-- ========================================================================== -->
+
 {% block content %}
 <h2>Documentation</h2>
-<p>documentation</p>
+
+<section id="documentation-intro">
+    <p>
+        The documentation is divided into two main sections:
+    </p>
+    <ul>
+        <li><strong>Project Documentation:</strong> covers the project overview, dataset, model architecture and training details.</li>
+        <li><strong>API Documentation:</strong> describes all backend endpoints, including how to use them, input formats and output responses.</li>
+    </ul>
+</section>
+
+<!-- Project Documentation -->
+<section id="project-docs">
+    <h2>Project Documentation</h2>
+
+    <section id="project-overview">
+        <h3>Project Overview</h3>
+        <p>
+            This project uses a YOLO-based keypoint detection model to identify the corners and important points of a foosball table.
+            The goal is to demonstrate real-time detection and provide accurate keypoints for applications such as analysis or augmented reality.
+        </p>
+    </section>
+
+    <section id="how-it-works">
+        <h3>How it Works</h3>
+        <p>
+            The model is trained on images of foosball matches captured from a spectator's view. It detects the eight key vertices of the table's play area. 
+            Preprocessing, training details, and model architecture are explained here.
+        </p>
+    </section>
+</section>
+
+<!-- API Documentation -->
+<section id="api-docs">
+    <h2>API Documentation</h2>
+
+    <section id="predict-endpoint">
+        <h3>/predict</h3>
+        <p>
+            Accepts image uploads via POST and returns the detected keypoints, bounding boxes, and confidence scores.
+        </p>
+        <ul>
+            <li>Method: POST</li>
+            <li>Form field: <code>photo</code> (image file)</li>
+            <li>Response JSON:
+                <pre>
+{
+  "keypoints": [[x1, y1], [x2, y2], ...],
+  "bounding_boxes": [[x, y, w, h], ...],
+  "confidence": [...]
+}
+                </pre>
+            </li>
+        </ul>
+    </section>
+
+    <section id="translate-position-endpoint">
+        <h3>/translate-position</h3>
+        <p>
+            Translates a point from image coordinates to table coordinates using the lower four keypoints of the table.
+        </p>
+        <ul>
+            <li>Method: POST</li>
+            <li>JSON body: <code>{"lower_keypoints": [...], "point": [x, y]}</code></li>
+            <li>Response JSON: <code>{"translated_point": [x, y]}</code></li>
+        </ul>
+    </section>
+
+    <section id="get-player-lines-endpoint">
+        <h3>/get-player-lines</h3>
+        <p>
+            Calculates the estimated positions of the foosball player lines based on all detected keypoints.
+        </p>
+        <ul>
+            <li>Method: POST</li>
+            <li>JSON body: <code>{"keypoints": [[x1, y1], [x2, y2], ...]}</code></li>
+            <li>Response JSON: <code>{"player_lines": [...]}</code></li>
+        </ul>
+    </section>
+
+    <section id="clean-keypoints-endpoint">
+        <h3>/clean-keypoints</h3>
+        <p>
+            Cleans noisy keypoints data to improve accuracy and consistency.
+        </p>
+        <ul>
+            <li>Method: POST</li>
+            <li>JSON body: <code>{"keypoints": [[x1, y1], ...]}</code></li>
+            <li>Response JSON: <code>{"keypoints": [[x1, y1], ...]}</code></li>
+        </ul>
+    </section>
+</section>
 {% endblock %}

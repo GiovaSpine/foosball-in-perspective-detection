@@ -29,12 +29,6 @@ def results():
     '''results'''
     return render_template("results.html")
 
-@app.route("/guide")
-def guide():
-    '''guide'''
-    return render_template("guide.html")
-
-
 @app.route("/predict/choose-from-samples")
 def choose_from_samples():
     '''choose-from-samples'''

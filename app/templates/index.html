@@ -1,6 +1,51 @@
 {% extends "base.html" %}
 
+<!-- ========================================================================== -->
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='info_pages_style.css') }}">
+{% endblock %}
+
+<!-- ========================================================================== -->
+
 {% block content %}
 <h2>Index</h2>
-<p>index</p>
+<section id="introduction">
+    <h2>Welcome</h2>
+    <p>
+        This web application allows you detects the eight key vertices of a foosball table's play area,
+        allowing you to understand its 3D geometry and leverage it for various tasks, such as
+        translating positions from image coordinates to table coordinates.
+    </p>
+
+    <p>
+        The detection is powered by a YOLO-based model, specifically trained on images of 
+        foosball matches captured from a spectator's view (see the documentation for details). 
+        You can explore the project through the documentation, view the model's detection results, 
+        or try it yourself in the Predict section.
+    </p>
+
+    <p>
+        In addition to detecting keypoints, the backend also provides APIs for translating points, estimating player line positions, 
+        and cleaning keypoint data for improved accuracy (more details in the documentation). 
+    </p>
+    <img src="/static/images/icons/Index.png" alt="Detection Example 1">
+</section>
+
+<section id="overview">
+    <h2>What you can do</h2>
+    <ul>
+        <li>
+           Learn about the project and its backend APIs in the <a href="{{ url_for('documentation') }}">Documentation</a> section.
+        </li>
+        <li>
+            Check out the model's performance and in the <a href="{{ url_for('results') }}">Results</a> section, 
+            including evaluation metrics and final considerations.
+        </li>
+        <li>
+            Try the model yourself in the <a href="{{ url_for('predict') }}">Predict</a> section, 
+            by uploading your own images or selecting from the sample images provided.
+        </li>
+    </ul>
+</section>
 {% endblock %}

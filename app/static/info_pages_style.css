@@ -1,0 +1,83 @@
+
+
+/* ============================================================================ */
+
+/* NAVIGATION */
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    margin: 0 1rem;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+nav a:hover {
+    color: #60a5fa;
+}
+
+/* ============================================================================ */
+
+/* INTRODUCTION */
+
+#introduction img {
+    width: 500px;
+    height: auto;
+    display: block;
+    margin: 1rem auto;
+    border-radius: 8px;
+}
+
+/* ============================================================================ */
+
+/* MAIN CONTENT */
+
+
+section {
+    margin: auto;
+    width: 85%;
+    max-width: 1000px;
+    margin-bottom: 3rem;
+    padding: 1rem 1.5rem;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+section h2 {
+    color: #1e3a8a;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+section p, section ul {
+    font-size: 1rem;
+    color: #555;
+}
+
+ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+}
+
+section ul li {
+    margin-bottom: 0.5rem;  /* distanza tra le righe */
+}
+
+/* ============================================================================ */
+
+/* RESULTS GALLERY */
+
+.results-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.results-gallery img {
+    max-width: 100%;
+    width: 300px;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+}

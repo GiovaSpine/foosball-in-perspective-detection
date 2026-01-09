@@ -1,6 +1,32 @@
 {% extends "base.html" %}
 
+<!-- ========================================================================== -->
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='info_pages_style.css') }}">
+{% endblock %}
+
+<!-- ========================================================================== -->
+
 {% block content %}
 <h2>Results</h2>
-<p>results</p>
+<section id="example-results">
+    <h2>Example Detections</h2>
+    <p>
+        Here you will find sample images with detected keypoints highlighted.
+        Add images dynamically or manually to showcase model performance.
+    </p>
+    <!-- Placeholder for images -->
+    <div class="results-gallery">
+        <img src="example1.jpg" alt="Detection Example 1">
+        <img src="example2.jpg" alt="Detection Example 2">
+    </div>
+</section>
+
+<section id="metrics">
+    <h2>Performance Metrics</h2>
+    <p>
+        Include accuracy, precision, recall, or any evaluation metric of your YOLO keypoint model.
+    </p>
+</section>
 {% endblock %}
