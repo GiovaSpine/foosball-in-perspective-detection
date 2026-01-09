@@ -92,6 +92,8 @@ def check_line(line: list | tuple) -> None:
 
 # ---------------------------------------------------------
 
+# ERRORS
+
 class NonConvexQuadrilateralError(ValueError):
     pass
 
@@ -100,7 +102,6 @@ class PointOutsideQuadrilateralError(ValueError):
 
 class AlgorithmFailedError(ValueError):
     pass
-
 
 # ---------------------------------------------------------
 
@@ -119,7 +120,6 @@ def cross(o: list | tuple, a: list | tuple, b: list | tuple) -> float:
     float: The signed scalar representing the 2D cross product of OA and OB
     '''
     # check parameters
-    print(o)
     check_point(o)
     check_point(a)
     check_point(b)

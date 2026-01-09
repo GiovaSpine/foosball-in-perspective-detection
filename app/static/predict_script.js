@@ -90,8 +90,8 @@ photo_input.addEventListener("change", async (e) => {
   const reader = new FileReader();
   reader.onload = () => {
     sessionStorage.setItem("photo", JSON.stringify({
-        data: reader.result,
-        name: file.name
+      data: reader.result,
+      name: file.name
     }));
   };
   reader.readAsDataURL(file);
@@ -107,33 +107,31 @@ photo_input.addEventListener("change", async (e) => {
   });
 
   let prediction = await response1.json();
-  console.log(prediction);
-  
-  if(prediction.keypoints.length != 0){
+
+  if (prediction.keypoints.length != 0) {
     // let's use the clean keypoints API
     const response2 = await fetch("/clean-keypoints", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            keypoints: prediction.keypoints[0],
-        })
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        keypoints: prediction.keypoints[0],
+      })
     });
     if (!response2.ok) {
-        const err = await response2.json();
-        console.log(err.error, "Server error");
-        message.textContent = "Error: " + err.error;
+      const err = await response2.json();
+      message.textContent = "Error: " + err.error;
     } else {
       const cleaned_keypoints = await response2.json();
       prediction.keypoints[0] = cleaned_keypoints.keypoints;
     }
-    
+
   }
   state.prediction = prediction;
 
   // check the prediction
-  if(state.prediction.keypoints.length == 0){
+  if (state.prediction.keypoints.length == 0) {
     // no valid prediction
     message.textContent = messages.no_valid_prediction;
     // we can't visualize anything
@@ -146,15 +144,15 @@ photo_input.addEventListener("change", async (e) => {
   }
 
   // the user want to see update the player_lines, so we have to update them
-  if(state.toggle_player_lines){
+  if (state.toggle_player_lines) {
     // there can be an error, like one of the faces on the side is not convex
     const result = await get_player_lines();
-    if(!result){
+    if (!result) {
       state.toggle_player_lines = false;
       update_icons();
     }
   }
-  
+
   // save the prediction in the session
   sessionStorage.setItem("prediction", JSON.stringify(state.prediction));
 
@@ -172,27 +170,24 @@ photo_input.addEventListener("change", async (e) => {
 });
 
 
-async function get_player_lines(){
+async function get_player_lines() {
   // we need to ask the server where are the player lines
 
   // send to the server the 4 lower keypoints and the interested point
   const response = await fetch("/get-player-lines", {
     method: "POST",
     headers: {
-        "Content-Type": "application/json"
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
-        keypoints: state.prediction.keypoints[0],
+      keypoints: state.prediction.keypoints[0],
     })
   });
   // there can be an error, like ...
   if (!response.ok) {
     const err = await response.json();
     message.textContent = "Error: " + err.error;
-    console.log("ERRORE")
     return false;
-  } else {
-    console.log("NO ERRORE")
   }
 
   const data = await response.json();
@@ -204,9 +199,9 @@ async function get_player_lines(){
 // --------------------------------------------------------
 // BUTTON FUNCTIONS
 
-function update_icons(){
+function update_icons() {
 
-  if(state.toggle_keypoints){
+  if (state.toggle_keypoints) {
     const button = document.getElementById("toggle_keypoints");
     const icon = button.querySelector(".icon");
     icon.src = icons.eye_path;
@@ -216,7 +211,7 @@ function update_icons(){
     icon.src = icons.eye_hidden_path;
   }
 
-  if(state.toggle_bounding_box){
+  if (state.toggle_bounding_box) {
     const button = document.getElementById("toggle_bounding_box");
     const icon = button.querySelector(".icon");
     icon.src = icons.eye_path;
@@ -225,8 +220,8 @@ function update_icons(){
     const icon = button.querySelector(".icon");
     icon.src = icons.eye_hidden_path;
   }
-  
-  if(state.toggle_play_area){
+
+  if (state.toggle_play_area) {
     const button = document.getElementById("toggle_play_area");
     const icon = button.querySelector(".icon");
     icon.src = icons.eye_path;
@@ -236,7 +231,7 @@ function update_icons(){
     icon.src = icons.eye_hidden_path;
   }
 
-  if(state.toggle_edges){
+  if (state.toggle_edges) {
     const button = document.getElementById("toggle_edges");
     const icon = button.querySelector(".icon");
     icon.src = icons.eye_path;
@@ -246,7 +241,7 @@ function update_icons(){
     icon.src = icons.eye_hidden_path;
   }
 
-  if(state.toggle_player_lines){
+  if (state.toggle_player_lines) {
     const button = document.getElementById("toggle_player_lines");
     const icon = button.querySelector(".icon");
     icon.src = icons.eye_path;
@@ -258,13 +253,13 @@ function update_icons(){
 }
 
 
-function check_photo_and_prediction(){
-  if(state.photo == null){
+function check_photo_and_prediction() {
+  if (state.photo == null) {
     // there is no image
     message.textContent = messages.no_image_provided;
     return false;
   }
-  if(state.prediction.keypoints.length == 0){
+  if (state.prediction.keypoints.length == 0) {
     // no valid prediction
     message.textContent = messages.no_valid_prediction;
     return false;
@@ -273,12 +268,12 @@ function check_photo_and_prediction(){
 }
 
 
-function toggle_keypoints(){
-  if(!check_photo_and_prediction()) return;
+function toggle_keypoints() {
+  if (!check_photo_and_prediction()) return;
 
   message.textContent = "";
 
-  if(state.toggle_keypoints) state.toggle_keypoints = false;
+  if (state.toggle_keypoints) state.toggle_keypoints = false;
   else state.toggle_keypoints = true;
 
   update_icons();
@@ -286,12 +281,12 @@ function toggle_keypoints(){
 }
 
 
-function toggle_bounding_box(){
-  if(!check_photo_and_prediction()) return;
+function toggle_bounding_box() {
+  if (!check_photo_and_prediction()) return;
 
   message.textContent = "";
-  
-  if(state.toggle_bounding_box) state.toggle_bounding_box = false;
+
+  if (state.toggle_bounding_box) state.toggle_bounding_box = false;
   else state.toggle_bounding_box = true;
 
   update_icons();
@@ -299,12 +294,12 @@ function toggle_bounding_box(){
 }
 
 
-function toggle_play_area(){
-  if(!check_photo_and_prediction()) return;
+function toggle_play_area() {
+  if (!check_photo_and_prediction()) return;
 
   message.textContent = "";
 
-  if(state.toggle_play_area) state.toggle_play_area = false;
+  if (state.toggle_play_area) state.toggle_play_area = false;
   else state.toggle_play_area = true;
 
   update_icons();
@@ -312,12 +307,12 @@ function toggle_play_area(){
 }
 
 
-function toggle_edges(){
-  if(!check_photo_and_prediction()) return;
+function toggle_edges() {
+  if (!check_photo_and_prediction()) return;
 
   message.textContent = "";
 
-  if(state.toggle_edges) state.toggle_edges = false;
+  if (state.toggle_edges) state.toggle_edges = false;
   else state.toggle_edges = true;
 
   update_icons();
@@ -325,17 +320,17 @@ function toggle_edges(){
 }
 
 
-async function toggle_player_lines(){
-  if(!check_photo_and_prediction()) return;
+async function toggle_player_lines() {
+  if (!check_photo_and_prediction()) return;
 
   message.textContent = "";
 
-  if(state.toggle_player_lines) state.toggle_player_lines = false;
+  if (state.toggle_player_lines) state.toggle_player_lines = false;
   else {
     state.toggle_player_lines = true;
     // there can be an error, like one of the faces on the side is not convex
     const result = await get_player_lines();
-    if(!result) state.toggle_player_lines = false;
+    if (!result) state.toggle_player_lines = false;
   }
 
   update_icons();
@@ -343,7 +338,7 @@ async function toggle_player_lines(){
 }
 
 
-function enable_buttons(enable){
+function enable_buttons(enable) {
   // enable or disable all buttons
   document.getElementById("photo_input").disabled = !enable;
   document.getElementById("toggle_keypoints").disabled = !enable;
@@ -355,8 +350,8 @@ function enable_buttons(enable){
 }
 
 
-async function translate_position(){
-  if(!check_photo_and_prediction()) return;
+async function translate_position() {
+  if (!check_photo_and_prediction()) return;
 
   message.textContent = messages.translate_position_instructions;
 
@@ -365,7 +360,7 @@ async function translate_position(){
 
   // draw the area to select the keypoint
   let delete_play_area = true;
-  if(state.toggle_play_area){
+  if (state.toggle_play_area) {
     // the play area was already on, so this function shouldn't delete it
     delete_play_area = false;
   } else {
@@ -374,21 +369,21 @@ async function translate_position(){
     draw_photo();
   }
 
-  function quit_translate_position(){
-    if(delete_play_area){
+  function quit_translate_position() {
+    if (delete_play_area) {
       state.toggle_play_area = false;
       draw_photo();
     }
     // enable all buttons
     enable_buttons(true);
   }
-  
+
   // the last 4 keypoints are the ones for the play area
   const lower_keypoints = state.prediction.keypoints[0].slice(-4);
 
   // what's the point to translate ?
   const e = await wait_for_click_or_escape();
-  if(e == null){
+  if (e == null) {
     quit_translate_position();  // the user pressed esc
     message.textContent = "";
     return;
@@ -396,23 +391,21 @@ async function translate_position(){
   const [cursur_x_canvas, cursur_y_canvas] = page_pos_to_canvas_pos(e.pageX, e.pageY);
   const [cursur_x_image, cursur_y_image] = canvas_pos_to_image_pos(cursur_x_canvas, cursur_y_canvas);
   const point = [cursur_x_image, cursur_y_image];
-  console.log(cursur_x_image, cursur_y_image);
-
+  
   // send to the server the 4 lower keypoints and the interested point
   const response = await fetch("/translate-position", {
     method: "POST",
     headers: {
-        "Content-Type": "application/json"
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
-        lower_keypoints: lower_keypoints,
-        point: point
+      lower_keypoints: lower_keypoints,
+      point: point
     })
   });
   // there can be an error, like the quadrilater is not convex or the point is outside the quadrilateral
   if (!response.ok) {
     const err = await response.json();
-    console.log(err.error, "Server error");
     message.textContent = "Error: " + err.error;
     quit_translate_position();
     return;
@@ -420,11 +413,13 @@ async function translate_position(){
 
   const data = await response.json();
   const translated_point = data.translated_point;
-  console.log(translated_point);
-
   draw_translated_point(translated_point)
 
   quit_translate_position();
-  message.textContent = "";
+  message.textContent =
+    "Translated point from \n(" + Math.round(cursur_x_image) + ", " +
+    Math.round(cursur_y_canvas) + ") to (" +
+    translated_point[0].toFixed(2) + ", " +
+    translated_point[1].toFixed(2) + ")";
 }
 

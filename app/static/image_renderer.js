@@ -18,7 +18,6 @@ export function image_position_and_scale(image_width, image_height, canvas_width
 
 // --------------------------------------------------------
 
-
 function draw_keypoints(color, radius){
 
     const x = state.image_x;
@@ -93,7 +92,6 @@ function draw_edge(A, B, color, thickness){
     const y = state.image_y;
     const scale = state.image_scale;
 
-    // coordinate scalate e traslate
     const x1 = A[0] * scale + x;
     const y1 = A[1] * scale + y;
     const x2 = B[0] * scale + x;
@@ -138,8 +136,6 @@ function draw_player_lines(color, thickness){
 }
 
 // --------------------------------------------------------
-
-
 
 export async function draw_photo(){
     
@@ -221,7 +217,7 @@ export async function draw_coordinate_system() {
 
     rctx.drawImage(
         coordinate_system_image,
-        0, 0,
+        0, 2,
         reference_canvas.width,
         reference_canvas.height
     );
