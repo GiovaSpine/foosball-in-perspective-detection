@@ -1,38 +1,5 @@
 
 
-/* ============================================================================ */
-
-/* NAVIGATION */
-
-nav a {
-    color: #fff;
-    text-decoration: none;
-    margin: 0 1rem;
-    font-weight: 500;
-    transition: color 0.3s;
-}
-
-nav a:hover {
-    color: #60a5fa;
-}
-
-/* ============================================================================ */
-
-/* INTRODUCTION */
-
-#introduction img {
-    width: 500px;
-    height: auto;
-    display: block;
-    margin: 1rem auto;
-    border-radius: 8px;
-}
-
-/* ============================================================================ */
-
-/* MAIN CONTENT */
-
-
 section {
     margin: auto;
     width: 85%;
@@ -50,6 +17,14 @@ section h2 {
     font-size: 1.2rem;
 }
 
+img {
+    width: 500px;
+    height: auto;
+    display: block;
+    margin: 1rem auto;
+    border-radius: 8px;
+}
+
 section p, section ul {
     font-size: 1rem;
     color: #555;
@@ -61,23 +36,18 @@ ul {
 }
 
 section ul li {
-    margin-bottom: 0.5rem;  /* distanza tra le righe */
+    margin-bottom: 0.5rem;
 }
 
-/* ============================================================================ */
-
-/* RESULTS GALLERY */
-
-.results-gallery {
+.gallery {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
     justify-content: center;
 }
 
-.results-gallery img {
-    max-width: 100%;
-    width: 300px;
+.gallery img {
+    width: 40%;
     border-radius: 8px;
     border: 2px solid #ddd;
 }

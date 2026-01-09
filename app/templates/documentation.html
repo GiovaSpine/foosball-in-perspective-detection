@@ -16,29 +16,118 @@
         The documentation is divided into two main sections:
     </p>
     <ul>
-        <li><strong>Project Documentation:</strong> covers the project overview, dataset, model architecture and training details.</li>
+        <li><strong>Project Documentation:</strong> covers the project overview, dataset and training details.</li>
         <li><strong>API Documentation:</strong> describes all backend endpoints, including how to use them, input formats and output responses.</li>
     </ul>
 </section>
 
 <!-- Project Documentation -->
-<section id="project-docs">
+<section>
     <h2>Project Documentation</h2>
 
-    <section id="project-overview">
+    <section">
         <h3>Project Overview</h3>
         <p>
-            This project uses a YOLO-based keypoint detection model to identify the corners and important points of a foosball table.
-            The goal is to demonstrate real-time detection and provide accurate keypoints for applications such as analysis or augmented reality.
+            This project uses a YOLO-based keypoint detection model to identify the eight vertices of a foosball table, given an image
+            of a match.
         </p>
+        <p>
+            Many other projects that try to find the position of the ball, to be able to control a robot to play for example,
+            require images taken from above the table, and so mapping a point from image coordinates to foosball table coordinates
+            is an easy task.
+        </p>
+        <p>  
+            But sometimes is not feasible to place a camera in such a place, and most videos of foosball matches are taken from
+            a <strong>spectator view</strong>.
+        </p>
+        <p>
+            For <strong>spectator view</strong> we refer to the view you would have by looking at the match from the short side of the table,
+            while other people are playing, occupying the long sides.
+        </p>
+        <p>
+            Examples:
+        </p>
+        <div class="gallery">
+            <img src="/static/images/icons/Index.png">
+            <img src="/static/images/icons/Index.png">
+        </div>
+        <p>
+            So the goal is to use an AI model to detect the vertices automatically and use some algorithm to translate the positions.
+        </p>
+        <p>
+            Additionally, instead of trying to find only the four vertices of the play area (the lower ones), that are the only ones needed
+            for translation, we can try to find all the eight vertices of the volume, like in the image above,
+            so that we can have a deeper understanding and more capabilities, like estimating the position of the player's lines
+            (the cylinders where the small football player statues are located).
+        </p>
+
     </section>
 
-    <section id="how-it-works">
-        <h3>How it Works</h3>
+    <section>
+        <h3>Dataset</h3>
         <p>
-            The model is trained on images of foosball matches captured from a spectator's view. It detects the eight key vertices of the table's play area. 
-            Preprocessing, training details, and model architecture are explained here.
+            The model was trained on 1130 images of foosball matches captured from a spectator's view.
         </p>
+        
+        <p>
+            The annotations were made using a self made annotation tool, designed to precisely select keypoint positions, 
+            following perspective constraints.
+        </p>
+
+        <p>
+            For the keypoints order we have the following rules:
+            <ul>
+                <li>
+                    Since the images are captured from a spectator's view, the two highest vertices of the table
+                    (corresponding to the lowest row in the image) are assigned as the first two keypoints:
+                    keypoint 0 on the left and keypoint 1 on the right.
+                </li>
+                <li>
+                    The remaining keypoints are then ordered following a clockwise direction.
+                </li>
+            </ul>
+            Examples:
+        </p>
+
+        <div class="gallery">
+            <img src="/static/images/icons/Index.png">
+            <img src="/static/images/icons/Index.png">
+        </div>
+
+        <p>
+            The images and were analyzed in terms of resolutions, shapes, ratios, brightnesses and saturations,
+            and were divided into clusters using K-Means.
+        </p>
+
+        <p>
+            The annotations were analyzed with respect to table orientation, position in the image and keypoint visibilities.
+        </p>
+
+        <p>
+            Based on these analyses, a targeted data augmentation strategy was applied to mitigate dataset
+            imbalances, resulting in a final dataset of 8,304 images.
+        </p>
+
+    </section>
+
+     <section>
+        <h3>Training Details</h3>
+        <p>
+            The model used for this project is <strong>YOLOv8 nano</strong>, configured for keypoint detection.
+            This architecture was chosen instead of <strong>YOLOv11 nano</strong>, because it might have
+            been too complex for the limited dataset size, potentially causing overfitting.
+        </p>
+        
+        <p>
+            The dataset was divided into a training set of 6,190 images and a validation set of 2,114 images, with no test set,
+            because a further division of the data could have reduced the training set size too much, and therefore no
+            hyperparameter fine-tuning was performed.
+        </p>
+
+        <p>
+            Check out the model's performance in the <a href="{{ url_for('results') }}">Results</a> section.
+        </p>
+
     </section>
 </section>
 
