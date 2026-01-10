@@ -107,6 +107,7 @@ photo_input.addEventListener("change", async (e) => {
   });
 
   let prediction = await response1.json();
+  console.log(prediction)
 
   if (prediction.keypoints.length != 0) {
     // let's use the clean keypoints API
@@ -193,6 +194,7 @@ async function get_player_lines() {
   const data = await response.json();
   const player_lines = data.player_lines;
   state.player_lines = player_lines;
+  console.log(player_lines)
   return true
 }
 

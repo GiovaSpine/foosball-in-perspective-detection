@@ -54,6 +54,8 @@ def predict():
 
     os.remove(filepath)
 
+    print(result.keypoints.conf)
+
     keypoints = []
     if result.keypoints is not None:
         for kps in result.keypoints.xy:
@@ -67,7 +69,7 @@ def predict():
     confidence = []
     if result.keypoints is not None:
         for kp_conf in result.keypoints.conf:
-            keypoints.append(kp_conf.tolist())
+            confidence.append(kp_conf.tolist())
 
     return jsonify({
         "keypoints": keypoints,

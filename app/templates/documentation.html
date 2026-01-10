@@ -48,18 +48,22 @@
             Examples:
         </p>
         <div class="gallery">
-            <img src="/static/images/icons/Index.png">
-            <img src="/static/images/icons/Index.png">
+            <img src="/static/images/page-images/Specator Image 1.png">
+            <img src="/static/images/page-images/Specator Image 2.png">
+            <img src="/static/images/page-images/Specator Image 3.png">
+            <img src="/static/images/page-images/Specator Image 4.png">
         </div>
         <p>
             So the goal is to use an AI model to detect the vertices automatically and use some algorithm to translate the positions.
         </p>
         <p>
             Additionally, instead of trying to find only the four vertices of the play area (the lower ones), that are the only ones needed
-            for translation, we can try to find all the eight vertices of the volume, like in the image above,
+            for translation, we can try to find all the eight vertices of the volume, like in the image below,
             so that we can have a deeper understanding and more capabilities, like estimating the position of the player's lines
             (the cylinders where the small football player statues are located).
         </p>
+
+        <img src="/static/images/page-images/Index.png">
 
     </section>
 
@@ -79,20 +83,22 @@
             <ul>
                 <li>
                     Since the images are captured from a spectator's view, the two highest vertices of the table
-                    (corresponding to the lowest row in the image) are assigned as the first two keypoints:
-                    keypoint 0 on the left and keypoint 1 on the right.
+                    (corresponding to the lowest row in the image) are vertices of the upper rectangle, and 
+                    are assigned as the first two keypoints: keypoint 0 on the left and keypoint 1 on the right.
                 </li>
                 <li>
-                    The remaining keypoints are then ordered following a clockwise direction.
+                    The other two keypoints (2 and 3) are the last two vertices of the upper rectangle, and follow a
+                    clockwise order.
+                </li>
+                <li>
+                    For the lower rectangle, that corresponds to the play area, we follow the same rules, but start
+                    from 4 and end with 7 instead.
                 </li>
             </ul>
-            Examples:
+            Example:
         </p>
 
-        <div class="gallery">
-            <img src="/static/images/icons/Index.png">
-            <img src="/static/images/icons/Index.png">
-        </div>
+        <img src="/static/images/page-images/Keypoint Order.png">
 
         <p>
             The images and were analyzed in terms of resolutions, shapes, ratios, brightnesses and saturations,
@@ -104,7 +110,7 @@
         </p>
 
         <p>
-            Based on these analyses, a targeted data augmentation strategy was applied to mitigate dataset
+            Based on these analysis, a targeted data augmentation strategy was applied to mitigate dataset
             imbalances, resulting in a final dataset of 8,304 images.
         </p>
 
@@ -132,10 +138,10 @@
 </section>
 
 <!-- API Documentation -->
-<section id="api-docs">
+<section>
     <h2>API Documentation</h2>
 
-    <section id="predict-endpoint">
+    <section>
         <h3>/predict</h3>
         <p>
             Accepts image uploads via POST and returns the detected keypoints, bounding boxes, and confidence scores.
@@ -146,48 +152,72 @@
             <li>Response JSON:
                 <pre>
 {
-  "keypoints": [[x1, y1], [x2, y2], ...],
-  "bounding_boxes": [[x, y, w, h], ...],
-  "confidence": [...]
-}
-                </pre>
+    "keypoints": [[x1, y1], [x2, y2], ...],
+    "bounding_boxes": [[x, y, w, h], ...],
+    "confidence": [...]
+}</pre>
             </li>
         </ul>
     </section>
 
-    <section id="translate-position-endpoint">
-        <h3>/translate-position</h3>
+    <section>
+        <h3>/clean-keypoints</h3>
         <p>
-            Translates a point from image coordinates to table coordinates using the lower four keypoints of the table.
+            Cleans raw predicted keypoints data by following perspective rules, to improve accuracy and consistency.
         </p>
         <ul>
             <li>Method: POST</li>
-            <li>JSON body: <code>{"lower_keypoints": [...], "point": [x, y]}</code></li>
-            <li>Response JSON: <code>{"translated_point": [x, y]}</code></li>
+            <li>JSON body: <pre>{"keypoints": [[x1, y1], ...]}</pre></li>
+            <li>Response JSON: <pre>{"keypoints": [[x1, y1], ...]}</pre></li>
         </ul>
     </section>
 
-    <section id="get-player-lines-endpoint">
+    <section>
+        <h3>/translate-position</h3>
+        <p>
+            Translates a point from image coordinates (pixel space) to normalized table coordinates.
+            The transformation is computed using the last four detected keypoints, corresponding to
+            the lower vertices of the table (play area).
+        </p>
+
+        <p>
+            The input point must be expressed in pixel coordinates relative to the image.
+            The output is a normalized 2D point in a coordinate system, where the origin is 
+            located at the center of the play area and the <code>x</code> axis goes towards
+            the line formed by the keypoint 5 and 6, and the <code>y</code> axis goes towards
+            the line formed by the keypoint 4 and 5.
+        </p>
+
+        <p>Example:</p>
+        <img src="/static/images/page-images/Translated Point.png">
+
+        <ul>
+            <li>Method: POST</li>
+            <li>JSON body:
+                <pre>
+{
+    "lower_keypoints": [[x1, y1], [x2, y2], ...],
+    "point": [x, y]
+}</pre>
+            </li>
+            <li>Response JSON: <pre>{"translated_point": [x, y]}</pre></li>
+        </ul>
+    </section>
+
+    <section>
         <h3>/get-player-lines</h3>
         <p>
             Calculates the estimated positions of the foosball player lines based on all detected keypoints.
         </p>
         <ul>
             <li>Method: POST</li>
-            <li>JSON body: <code>{"keypoints": [[x1, y1], [x2, y2], ...]}</code></li>
-            <li>Response JSON: <code>{"player_lines": [...]}</code></li>
-        </ul>
-    </section>
-
-    <section id="clean-keypoints-endpoint">
-        <h3>/clean-keypoints</h3>
-        <p>
-            Cleans noisy keypoints data to improve accuracy and consistency.
-        </p>
-        <ul>
-            <li>Method: POST</li>
-            <li>JSON body: <code>{"keypoints": [[x1, y1], ...]}</code></li>
-            <li>Response JSON: <code>{"keypoints": [[x1, y1], ...]}</code></li>
+            <li>JSON body: <pre>{"keypoints": [[x1, y1], [x2, y2], ...]}</pre></li>
+            <li>Response JSON:
+                <pre>
+{
+    "player_lines": [[[x1, y1], [x2, y2]], ...]
+}</pre>
+            </li>
         </ul>
     </section>
 </section>
