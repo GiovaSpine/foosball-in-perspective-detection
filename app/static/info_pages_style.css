@@ -68,3 +68,10 @@ pre {
     border-radius: 8px;
     overflow-x: auto;
 }
+
+
+hr {
+    margin: 15px 0;
+    border: none;
+    border-top: 2px solid #cfcfcf;
+}

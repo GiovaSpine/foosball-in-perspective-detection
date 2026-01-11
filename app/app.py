@@ -19,10 +19,16 @@ def index():
     '''index'''
     return render_template("index.html")
 
-@app.route("/documentation")
-def documentation():
-    '''documentation'''
-    return render_template("documentation.html")
+@app.route("/project-documentation")
+def project_documentation():
+    '''project documentation'''
+    return render_template("project_documentation.html")
+
+@app.route("/api-documentation")
+def api_documentation():
+    '''api documentation'''
+    return render_template("api_documentation.html")
+
 
 @app.route("/results")
 def results():

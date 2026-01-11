@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+<!-- ========================================================================== -->
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='info_pages_style.css') }}">
+{% endblock %}
+
+<!-- ========================================================================== -->
+
+{% block content %}
+<h2>API Documentation</h2>
+
+<section>
+    <h3>/predict</h3>
+    <p>
+        Accepts image uploads via POST and returns the detected keypoints, bounding boxes, and confidence scores.
+    </p>
+    <p>
+        <strong>Note:</strong> The model was trained on images containing a single foosball table. 
+        While the API can return multiple detected instances, it is recommended to upload images 
+        with only one table for reliable results.
+    </p>
+    <p>
+        As a result you should expect:
+        <ul>
+            <li>
+                "keypoints" to be an array that contain a single array of 8 keypoints as <code>[x1, x2]</code>
+                in image coordinates.
+            </li>
+            <li>
+                "bounding_boxes" to be an array that contain a single array, representing the bounding box as
+                <code>[x, y, w, h]</code>, where x, y are the coordinate of the center of the rectangle
+                and w, h are the width and height respectivly, all in image coordinates.
+            </li>
+            <li>
+                "confidence" to be an array that contain a single array of 8 confidence scores.
+            </li>
+        </ul>
+    </p>
+    <br>
+    <ul>
+        <li>Method: POST</li>
+        <li>Form field: <code>photo</code> (image file)</li>
+        <li>Response JSON:
+            <pre>
+{
+    "keypoints": [
+        [[x1, y1], [x2, y2], ..., [x8, y8]], ...
+    ],
+    "bounding_boxes": [
+        [x, y, w, h], ...
+    ],
+    "confidence": [
+        [c1, c2, ..., c8], ...
+    ]
+}</pre>
+        </li>
+    </ul>
+</section>
+
+<section>
+    <h3>/clean-keypoints</h3>
+    <p>
+        Cleans raw predicted keypoints data by following perspective rules, to improve accuracy and consistency.
+    </p>
+    <ul>
+        <li>Method: POST</li>
+        <li>JSON body: <pre>{"keypoints": [[x1, y1], [x2, y2], ..., [x8, y8]]}</pre></li>
+        <li>Response JSON: <pre>{"keypoints": [[x1, y1], [x2, y2], ..., [x8, y8]]}</pre></li>
+    </ul>
+</section>
+
+<section>
+    <h3>/translate-position</h3>
+    <p>
+        Translates a point from image coordinates (pixel space) to normalized table coordinates.
+        The transformation is computed using the last four detected keypoints, corresponding to
+        the lower vertices of the table (play area).
+    </p>
+
+    <p>
+        The input point must be expressed in pixel coordinates relative to the image.
+        The output is a normalized 2D point in a coordinate system, where the origin is 
+        located at the center of the play area and the <code>x</code> axis goes towards
+        the line formed by the keypoint 5 and 6, and the <code>y</code> axis goes towards
+        the line formed by the keypoint 4 and 5.
+    </p>
+
+    <p>Example:</p>
+    <img src="/static/images/page-images/Translated Point.png">
+
+    <ul>
+        <li>Method: POST</li>
+        <li>JSON body:
+            <pre>
+{
+"lower_keypoints": [[x4, y4], [x5, y5], [x6, y6], [x7, y7]],
+"point": [x, y]
+}</pre>
+        </li>
+        <li>Response JSON: <pre>{"translated_point": [x, y]}</pre></li>
+    </ul>
+</section>
+
+<section>
+    <h3>/get-player-lines</h3>
+    <p>
+        Calculates the estimated positions of the 8 foosball player lines, each rapresented as
+        <code>[[x1, y1], [x2, y2]]</code> in image coordinates, based on all detected keypoints.
+    </p>
+    <ul>
+        <li>Method: POST</li>
+        <li>JSON body: <pre>{"keypoints": [[x1, y1], [x2, y2], ..., [x8, y8]]}</pre></li>
+        <li>Response JSON:
+            <pre>
+{
+    "player_lines": [
+        [[l1_x1, l1_y1], [l2_x2, l2_y2]], ..., [l8_x1, l8_y1], [l8_x2, l8_y2]]
+    ]
+}</pre>
+        </li>
+    </ul>
+</section>
+{% endblock %}
