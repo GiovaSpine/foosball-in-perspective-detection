@@ -10,23 +10,56 @@
 
 {% block content %}
 <h2>Results</h2>
-<section id="example-results">
-    <h2>Example Detections</h2>
-    <p>
-        Here you will find sample images with detected keypoints highlighted.
-        Add images dynamically or manually to showcase model performance.
-    </p>
-    <!-- Placeholder for images -->
-    <div class="gallery">
-        <img src="/static/images/icons/Index.png">
-        <img src="/static/images/icons/Index.png">
-    </div>
-</section>
+
+<img src="/static/images/graphs/results.png" class="results">
 
 <section id="metrics">
     <h2>Performance Metrics</h2>
+
     <p>
-        Include accuracy, precision, recall, or any evaluation metric of your YOLO keypoint model.
+        Although the evaluation reports extremely high performance values, 
+        a closer analysis reveals that these metrics alone do not portray
+        the generalization capabilities of the model.
+    </p>
+
+    <ul>
+        <li>precision(B): 0.9976</li>
+        <li>recall(B): 0.9999</li>
+        <li>mAP50(B): 0.9950</li>
+        <li>mAP50-95(B): 0.9279</li>
+        <li>precision(P): 0.9976</li>
+        <li>recall(P): 0.9999</li>
+        <li>mAP50(P): 0.9950</li>
+        <li>mAP50-95(P): 0.9934</li>
+    </ul>
+
+    <p>
+        Despite these near-perfect numerical results, a visual inspection of the
+        model predictions highlights clear limitations in its ability to generalize to
+        unseen scenarios. We can see some examples below.
+    </p>
+
+    <div class="gallery">
+        <img src="/static/images/page-images/Example1.png">
+        <img src="/static/images/page-images/Example2.png">
+        <img src="/static/images/page-images/Example3.png">
+        <img src="/static/images/page-images/Example4.png">
+    </div>
+
+    <p>
+        This discrepancy is likely caused by the limited size and diversity of the training dataset.
+        The task involves a wide range of different tables, configurations, camera lenses,
+        viewpoints, lighting conditions, and occlusions, which are not sufficiently
+        represented in the available data.
+        As a result YOLO might be too complex for the dataset, overfitting the training data.
+    </p>
+
+    <p>
+        Evidence of overfitting can also be observed during training, where the
+        pose loss on the training set converges to approximately 0.01, while the
+        validation pose loss, around 0.1, indicating a tenfold increase.
+        This gap suggests that the model has learned to fit the training samples
+        very accurately but struggles to generalize beyond them.
     </p>
 </section>
 {% endblock %}

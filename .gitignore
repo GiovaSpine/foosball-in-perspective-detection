@@ -45,6 +45,9 @@ yolo/runs/train05/args.yaml
 yolo/runs/train05/train_batch*.jpg
 yolo/runs/train05/val_batch*.jpg
 
+yolo/runs/val/train_batch*.jpg
+yolo/runs/val/val_batch*.jpg
+
 yolo*.pt
 
 app/algorithms/__pycache__

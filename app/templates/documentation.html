@@ -11,12 +11,12 @@
 {% block content %}
 <h2>Documentation</h2>
 
-<section id="documentation-intro">
+<section>
     <p>
         The documentation is divided into two main sections:
     </p>
     <ul>
-        <li><strong>Project Documentation:</strong> covers the project overview, dataset and training details.</li>
+        <li><strong>Project Documentation:</strong> covers the project overview, dataset, data analysis,  and training details.</li>
         <li><strong>API Documentation:</strong> describes all backend endpoints, including how to use them, input formats and output responses.</li>
     </ul>
 </section>
@@ -61,21 +61,25 @@
             for translation, we can try to find all the eight vertices of the volume, like in the image below,
             so that we can have a deeper understanding and more capabilities, like estimating the position of the player's lines
             (the cylinders where the small football player statues are located).
+            <img src="/static/images/page-images/Index.png">
         </p>
 
-        <img src="/static/images/page-images/Index.png">
-
+        
     </section>
 
     <section>
         <h3>Dataset</h3>
         <p>
-            The model was trained on 1130 images of foosball matches captured from a spectator's view.
+            The dataset is composed of 1,128 images of foosball matches captured from different spectator viewpoints.
+            The images exhibit a wide variability in camera angles, table models, acquisition environments, camera devices
+            and zoom levels, as well as lighting conditions.
         </p>
         
         <p>
             The annotations were made using a self made annotation tool, designed to precisely select keypoint positions, 
             following perspective constraints.
+            This aspect is particularly important, as in most spectator viewpoints the model is required to infer the positions
+            of vertices 6 and 7, which are often occluded by obstacles, as shown in the example below.
         </p>
 
         <p>
@@ -96,27 +100,121 @@
                 </li>
             </ul>
             Example:
-        </p>
-
-        <img src="/static/images/page-images/Keypoint Order.png">
-
-        <p>
-            The images and were analyzed in terms of resolutions, shapes, ratios, brightnesses and saturations,
-            and were divided into clusters using K-Means.
+            <img src="/static/images/page-images/Keypoint Order.png">
         </p>
 
         <p>
-            The annotations were analyzed with respect to table orientation, position in the image and keypoint visibilities.
+            In every image of the dataset, the first four keypoints are always present and never fall outside
+            the image boundaries. This represents a design constraint of the project: when these four keypoints
+            are present, at least one or two of the remaining lower keypoints are also present,
+            allowing the others to be calculated by applying perspective constraints.
+        </p>
+        
+    </section>
+
+
+    <section>
+        <h3>Data Analysis</h3>
+        <p>
+            The dataset was originally composed of 681 images. Using K-Means, the images were grouped into different clusters,
+            and additional images were added based on their visual properties in order to increase the dataset size while
+            attempting to balance clusters with fewer samples.
+        </p>
+        <P>
+            Some of the observations are summarized below:
+            <ul>
+                <li>
+                    With K=2, the clusters appeared to show that the number of images captured with a zoomed camera (high focal length)
+                    were approximately 200 fewer than the images taken with a regular zoom (human-level focal length).
+                    <div class="small_gallery">
+                        <img src="/static/images/samples/index104_frame_015.jpg">
+                        <img src="/static/images/samples/index83_frame_012.jpg">
+                    </div>
+                </li>
+                <li>
+                    With K=3, the cluster corresponding to zoomed-camera images was further divided
+                    into light and dark images, with the lighter images being slightly more numerous.
+                    <div class="small_gallery">
+                        <img src="/static/images/samples/Screenshot (476).png">
+                        <img src="/static/images/samples/index102_frame_006.jpg">
+                    </div>
+                </li>
+                <li>
+                    With K=4 a very small cluster of 39 images, with strangely rotated images appeared. and stayed the same in every other K.
+                    This issue was addressed through rotation-based data augmentation techniques.
+                    <div class="small_gallery">
+                        <img src="/static/images/samples/index57_frame_013.jpg">
+                    </div>
+                </li>
+                <li>
+                    With K=5, a small cluster of approximately 70 very dark images appeared, suggesting the need for additional samples.
+                    Another cluster of around 100 images, captured from a top-down viewpoint above the table, was also identified and
+                    suggested a need of slightly more top-down viewpoint above the table.
+                    <div class="small_gallery">
+                        <img src="/static/images/samples/index88_frame_017.jpg">
+                        <img src="/static/images/samples/Alto 9.png">
+                    </div>
+                </li>
+                <li>
+                    With K=6, the largest cluster, composed of regularly zoomed images taken from a human-level height, was split into
+                    two sub-clusters: one containing white tables with green play areas, and another with darker-colored tables.
+                    The first one contained approximately 50 fewer images than the second one.
+                    <div class="small_gallery">
+                        <img src="/static/images/samples/index2_frame_016.jpg">
+                        <img src="/static/images/samples/index19_frame_004.jpg">
+                    </div>
+                </li>
+            </ul>
+        </P>
+        
+        <p>
+            The annotations allowed an analysis of the table's positions, directions, sizes and keypoint visibilities .
+            The resulting distributions were used not only to guide the data augmentation process, in order to achieve a more balanced dataset,
+            but also to choose additional images to add to the dataset.
         </p>
 
+        <P>
+            The graphs and some of the observations are summarized below:
+            <ul>
+                <li>
+                    Centers
+                    <div class="gallery">
+                        <img src="/static/images/graphs/Centers (Default).png">
+                        <img src="/static/images/graphs/Centers Heatmap (Default).png">
+                    </div>
+                </li>
+                <li>
+                    Directions
+                    <div class="gallery">
+                        <img src="/static/images/graphs/Directions (Default).png">
+                        <img src="/static/images/graphs/Theta (Default).png">
+                    </div>
+                </li>
+                <li>
+                    Size
+                    <div class="gallery">
+                        <img src="/static/images/graphs/BBox Dimension (Default).png">
+                    </div>
+                </li>
+                <li>
+                    Visibilities
+                    <div class="gallery">
+                        <img src="/static/images/graphs/Visibilities (Default).png">
+                    </div>
+                </li>
+            </ul>
+        </P>
+
+        <p>With the analysis of K-Means and annotations additional 447 images were added to the dataset.</p>
+
         <p>
-            Based on these analysis, a targeted data augmentation strategy was applied to mitigate dataset
-            imbalances, resulting in a final dataset of 8,304 images.
+            The resulting dataset was also analyzed in terms of shape, resolution, aspect ratio, brightness, and saturation.
+            The resulting distributions were used to guide the data augmentation process in order to achieve a more balanced dataset.
         </p>
 
     </section>
 
-     <section>
+    <section>
         <h3>Training Details</h3>
         <p>
             The model used for this project is <strong>YOLOv8 nano</strong>, configured for keypoint detection.
@@ -125,7 +223,7 @@
         </p>
         
         <p>
-            The dataset was divided into a training set of 6,190 images and a validation set of 2,114 images, with no test set,
+            The dataset was divided into a training set of 6,190 images and a validation set of 2,113 images, with no test set,
             because a further division of the data could have reduced the training set size too much, and therefore no
             hyperparameter fine-tuning was performed.
         </p>

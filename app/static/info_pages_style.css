@@ -39,7 +39,7 @@ section ul li {
     margin-bottom: 0.5rem;
 }
 
-.gallery {
+.gallery, .small_gallery {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
@@ -50,6 +50,14 @@ section ul li {
     width: 40%;
     border-radius: 8px;
     border: 2px solid #ddd;
+}
+
+.small_gallery img {
+    width: 20%;
+}
+
+.results{
+    width: 80%;
 }
 
 
