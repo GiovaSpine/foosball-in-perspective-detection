@@ -218,7 +218,16 @@
                 <li>
                     Shapes, Resolution and Aspect Ratio
                     <p>
-                        bla bla bla
+                        <strong>Note:</strong> No images were padded to obtain shapes different from the original photograph.
+                    </p>
+                    <p>
+                        We define <em>high-resolution</em> images as those whose longest side is greater than 640 pixels. Such images are
+                        downscaled by YOLO during preprocessing. Conversely, <em>low-resolution</em> images are upscaled using
+                        interpolation, which may introduce artifacts and potential bias.
+                    </p>
+                    <p>
+                        The analysis shows that the vast majority of images are <em>high-resolution horizontal rectangle</em>,
+                        with an aspect ratio around 1.77, and so with data augmentation we will have to mitigate this big discrepancy.
                     </p>
                     <div class="gallery">
                         <img src="/static/images/graphs/Shape (Added).png">
@@ -229,7 +238,7 @@
                 <li>
                     Brightness and Saturation
                     <p>
-                        bla bla bla
+                        The analysis of the averagebrightness and saturation distributions indicates a relatively well-balanced dataset.
                     </p>
                     <div class="gallery">
                         <img src="/static/images/graphs/Brightness (Added).png">
@@ -243,7 +252,7 @@
 
         <p>
             The annotations allowed an analysis of the table's positions, directions, sizes and keypoint visibilities .
-            The resulting distributions were used to guide the data augmentation process in order to achieve a more balanced dataset,
+            The resulting distributions were used to guide the data augmentation process in order to achieve a more balanced dataset.
         </p>
 
         <p>
@@ -252,7 +261,14 @@
                 <li>
                     Centers
                     <p>
-                        bla bla bla
+                        For <em>center</em> we refer to the intersection between the line that goes from the first keypoint to
+                        the third, and the line that goes from the second to the fourth.
+                        The coordinates are normalized, and we can see obviously that most foosball tables are around the center
+                        of the image.
+                    </p>
+                    <p>
+                        With data augmentation we will try to apply scale-based transformations ans traslations to generate augmented images
+                        in a not centered position.
                     </p>
                     <div class="gallery">
                         <img src="/static/images/graphs/Centers (Added).png">
@@ -262,7 +278,24 @@
                 <li>
                     Directions
                     <p>
-                        bla bla bla
+                        For <em>direction</em> we refer to the vector that goes from the center of the table, calculated as
+                        the intersection between the line that goes from the first keypoint to the third, and the line that goes
+                        from the second to the fourth, to the vanishing point for the y axis, calculated as
+                        the intersection between the line that goes from the first keypoint to the fourth, and the line that goes
+                        from the second to the third.
+                    </p>
+                    <p>
+                        In the following image below, the direction is rapresented as the green y arrow.
+                    </p>
+                    <div class="small_gallery">
+                        <img src="/static/images/page-images/Translated Point.png">
+                    </div>
+                    <p>
+                        From the direction we can calculate the angle, and we can see that the vast majority of images have an angle around 90
+                        degrees, that corresponds to a vertical direction.
+                    </p>
+                    <p>
+                        With data augmentation we will have to mitigate this big discrepancy, applying rotation-based transformations.
                     </p>
                     <div class="gallery">
                         <img src="/static/images/graphs/Directions (Added).png">
@@ -272,7 +305,11 @@
                 <li>
                     Size
                     <p>
-                        bla bla bla
+                        For <em>size</em> or <em>dimension</em> we refer to the percentage of how much the bounding box covers the image.
+                    </p>
+                    <p>
+                        The graph indicates that most images have a bounding box that covers around 25% of the image, and so with
+                        data augmentation we will apply scale-based transformations to mitigate this discrepancy.
                     </p>
                     <div class="gallery">
                         <img src="/static/images/graphs/BBox Dimension (Added).png">
@@ -281,7 +318,21 @@
                 <li>
                     Visibilities
                     <p>
-                        bla bla bla
+                        <strong>Reminder:</strong>
+                        <ul>
+                            <li>A visibility of 2 indicates that the keypoint is visible in the image.</li>
+                            <li>A visibility of 1 indicates that the keypoint is present in the image, but occluded by something.</li>
+                            <li>A visibility of 0 indicates that the keypoint outside the boundaries of the image.</li>
+                        </ul>
+                    </p>
+                    <p>
+                        The analysis shows that the vast majority of the first four keypoints have a visibility of 2, and only a small
+                        fraction are occluded by an obstacle, while for the last 4 keypoints it's the opposite.
+                    </p>
+                    <p>
+                        During data augmentation we will give a higher priority to be chosen to generate new data, to images
+                        with at least one of the first four keypoints with a visibility of 1, or with at least one of the last four
+                        keypoints with a visibility of 0 or 2.
                     </p>
                     <div class="gallery">
                         <img src="/static/images/graphs/Visibilities (Added).png">
@@ -294,6 +345,166 @@
 
     <section>
         <h3>Data Augmentation</h3>
+
+        <p>
+            Data augmentation was guided not only by the distributions obtained from the image and annotation analysis,
+            but also by the informations provided by K-Means clustering.
+        </p>
+        <p>
+            A first data augmentation was selectively applied to images belonging to clusters with significantly fewer samples
+            compared to the others, with the goal of achieving a more balanced cluster distribution.
+            The applied transformations were not drastic, in order to ensure that the augmented images
+            would still belong to the same cluster as their original source images.
+        </p>
+        <p>
+            For each value of K in {2, 3, 4, 5, 6}, the graphs below compare the distribution of images across
+            clusters before and after the data augmentation guided by K-Means. The plots on the left show the
+            cluster counts for the full dataset of 1,128 images, while the plots on the right
+            illustrate the effect of the data augmentation.
+        </p>
+        <div class="gallery">
+            <img src="/static/images/graphs/added_cluster_counts_image_k_2.png">
+            <img src="/static/images/graphs/clustering_augmented_cluster_counts_image_k_2.png">
+        </div>
+        <div class="gallery">
+            <img src="/static/images/graphs/added_cluster_counts_image_k_3.png">
+            <img src="/static/images/graphs/clustering_augmented_cluster_counts_image_k_3.png">
+        </div>
+        <div class="gallery">
+            <img src="/static/images/graphs/added_cluster_counts_image_k_4.png">
+            <img src="/static/images/graphs/clustering_augmented_cluster_counts_image_k_4.png">
+        </div>
+        <div class="gallery">
+            <img src="/static/images/graphs/added_cluster_counts_image_k_5.png">
+            <img src="/static/images/graphs/clustering_augmented_cluster_counts_image_k_5.png">
+        </div>
+        <div class="gallery">
+            <img src="/static/images/graphs/added_cluster_counts_image_k_6.png">
+            <img src="/static/images/graphs/clustering_augmented_cluster_counts_image_k_6.png">
+        </div>
+        <p>
+            The results indicate that for K in {2, 3, 6} the applied data augmentation did not improve
+            the balance between clusters, whereas for K in {4, 5} a more balanced distribution was achieved.
+        </p>
+
+        <br>
+
+        <p>
+            K-Means clustering was also applied with K values ranging from 7 to 20.
+            The graphs below compare the distribution of images across clusters before (on the left) and after (on the right)
+            data augmentation, similarly to the previous analysis, but allow all cluster counts to be visualized simultaneously.
+        </p>
+        <p>
+            Each row represents a specific number of clusters K, ranging from 2 to 20.
+            Each square corresponds to a cluster for that value of K and is color-coded to indicate
+            whether its size is above or below the average cluster size for that row (yellow colors indicate
+            balanced distributions).
+        </p>
+        <div class="big_gallery">
+            <img src="/static/images/graphs/added_all_counts.png">
+            <img src="/static/images/graphs/clustering_augmented_all_counts.png">
+        </div>
+        <p>
+            Consistently with the earlier observations, for smaller values of K such as 2, 3, and 6,
+            the data augmentation does not appear to significantly improve cluster balance.
+            However, for higher values of K, the augmented data graph on the right shows less extreme colors,
+            indicating a clearer balancing effect.
+        </p>
+
+        <hr>
+
+        <p>
+            <strong>Note:</strong> The data augmentation guided by distributions obtained from the image and annotation analysis
+            was applied <strong>after</strong> the one guided by K-Means, just discussed.
+        </p>
+
+        <p>
+            On the left, the previously discussed data analysis graphs are shown, while on the right the effect of this final data augmentation step is presented.
+            This comparison highlights how the overall data distribution changes and provides insight into how these modifications may influence the model's
+            training behavior and generalization performance, which will be discussed in the following section.
+        </p>
+        
+        <ul>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/Shape (Added).png">
+                    <img src="/static/images/graphs/Shape (Augmented).png">
+                </div>
+            </li>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/Ratio (Added).png">
+                    <img src="/static/images/graphs/Ratio (Augmented).png">
+                </div>
+            </li>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/Resolution (Added).png">
+                    <img src="/static/images/graphs/Resolution (Augmented).png">
+                </div>
+            </li>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/Brightness (Added).png">
+                    <img src="/static/images/graphs/Brightness (Augmented).png">
+                </div>
+            </li>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/Saturation (Added).png">
+                    <img src="/static/images/graphs/Saturation (Augmented).png">
+                </div>
+            </li>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/Centers (Added).png">
+                    <img src="/static/images/graphs/Centers (Augmented).png">
+                </div>
+            </li>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/Centers Heatmap (Added).png">
+                    <img src="/static/images/graphs/Centers Heatmap (Augmented).png">
+                </div>
+            </li>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/Directions (Added).png">
+                    <img src="/static/images/graphs/Directions (Augmented).png">
+                </div>
+            </li>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/Theta (Added).png">
+                    <img src="/static/images/graphs/Theta (Augmented).png">
+                </div>
+            </li>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/BBox Dimension (Added).png">
+                    <img src="/static/images/graphs/BBox Dimension (Augmented).png">
+                </div>
+            </li>
+            <li>
+                yo
+                <div class="gallery">
+                    <img src="/static/images/graphs/Visibilities (Added).png">
+                    <img src="/static/images/graphs/Visibilities (Augmented).png">
+                </div>
+            </li>
+        </ul>
+
+
     </section>
 
     <section>
