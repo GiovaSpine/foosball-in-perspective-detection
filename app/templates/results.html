@@ -63,4 +63,150 @@
 </section>
 
 <img src="/static/images/graphs/results.png" class="results">
+
+<section>
+    <h2>Qualitative Analysis and Expected Behavior</h2>
+    <p>
+        Beyond quantitative metrics, it is also important to evaluate whether the model behaves
+        consistently with the expectations derived from the data analysis and augmentation process.
+        In this section, qualitative examples are used to assess whether the model performs better
+        in well-represented scenarios and degrades in cases that were identified as challenging.
+    </p>
+    <ul>
+        <li>
+            We can see, like expected, that the model performs better with horizontal shapes
+            <div class="gallery">
+                <img src="/static/images/page-images/Example1.png">
+                <img src="/static/images/page-images/Example1.png">
+            </div>
+        </li>
+        <li>
+            We can see, like expected, that the model performs poorly with rotated images
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/added52_frame_027.jpg">
+                <img src="/static/images/samples/added54_frame_049.jpg">
+                <img src="/static/images/samples/DataSetVari 49.jpg">
+                <img src="/static/images/samples/index69_frame_005.jpg">
+                <img src="/static/images/samples/index80_frame_013.jpg">
+            </div>
+        </li>
+
+        <li>
+            We can see, like expected, that the model performs poorly with one of the
+            first four keypoints occluded
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/index88_frame_023.jpg">
+                <img src="/static/images/samples/index88_frame_024.jpg">
+            </div>
+        </li>
+
+        <li>
+            We can see, like expected, that the model performs poorly with one of the
+            keypoits 6 or 7 outside the image
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/index20_frame_025.jpg">
+                <img src="/static/images/samples/index71_frame_017.jpg">
+                <img src="/static/images/samples/index83_frame_010.jpg">
+            </div>
+        </li>
+
+        <li>
+            Anche se i keypoint non sono occlusi ma c'è un ostacolo si comporta peggio
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/Screenshot (646).jpg">
+                <img src="/static/images/samples/Screenshot (625).jpg">
+            </div>
+            <p>
+                Though this problem doesn't seem to worse to much the performance se è lieve
+            </p>
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/added29_frame_026.jpg">
+                <img src="/static/images/samples/added29_frame_023.jpg">
+            </div>
+        </li>
+
+        <li>
+            We can see, like expected, that the model perform better with the image in the center
+            <div class="really_big_gallery">
+                <img src="/static/images/page-images/Example1.png">
+                <img src="/static/images/page-images/Example1.png">
+            </div>
+        </li>
+    </ul>
+
+    <hr>
+
+    <p>
+        In addition to the behaviors that were consistent with the expectations derived from the data analysis,
+        several unexpected patterns emerged during qualitative evaluation.
+        These cases highlight limitations of the model that were not fully anticipated
+        based solely on dataset statistics.
+    </p>
+
+    <ul>
+        <li>
+            The model doesn't appear to work well on images captured at a humel eye level viewpoint,
+            with a not zoomed camera (low focal length) of white colored foosball table,
+            even tough K-Means appeard to show a decent amount of those images.
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/index2_frame_013.jpg">
+                <img src="/static/images/samples/index59_frame_014.jpg">
+                <img src="/static/images/samples/added17_frame_029.jpg">
+                <img src="/static/images/samples/added27_frame_022.jpg">
+                <img src="/static/images/samples/added28_frame_008.jpg">
+                <img src="/static/images/samples/Foto 29.jpg">
+                <img src="/static/images/samples/index71_frame_003.jpg">
+            </div>
+        </li>
+
+        <li>
+            But we can see that regardless if the viewpoint height and focal length are higher, the model
+            work slighlt better, but doesn't perform perfectly.
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/index86_frame_034.jpg">
+                <img src="/static/images/samples/index83_frame_003.jpg">
+                <img src="/static/images/samples/index113_frame_020.jpg">
+            </div>
+        </li>
+
+        <li>
+            The problem of the low focal length and low height viewpoint doesn't seem to affect only white colored table.
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/index14_frame_017.jpg">
+                <img src="/static/images/samples/index9_frame_015.jpg">
+            </div>
+            This is strange, because K-Means seemed to suggest a higher amount of images with a low focal lenght.
+            The problem is probably mostly caused by the humal eye level viewpoint, rather than the low focal length,
+            since we can see in the following image that the focal length is not high, and the model performed much better.
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/index113_frame_001.jpg">
+            </div>
+        </li>
+
+        <li>
+            Interestingly, the model appears to perform better on images of darker-colored foosball tables
+            captured with a zoomed camera (high focal length) from a high viewpoint.
+            K-Means analysis suggested that these images were relatively scarce in the dataset, 
+            so one would initially expect worse performance on them.
+            <p>
+                However, these images are of notably higher quality: they typically have higher resolution, 
+                cleaner compositions, and less background noise. They also tend to be more standardized,
+                as many are taken during organized tournaments where the camera framing and lighting are controlled,
+                rather than casual recordings from smartphones. 
+                This higher image quality likely compensates for the lower quantity, allowing the model to perform better
+                than expected.
+            </p>
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/index102_frame_006.jpg">
+                <img src="/static/images/samples/index104_frame_004.jpg">
+                <img src="/static/images/samples/index6_frame_020.jpg">
+                <img src="/static/images/samples/added33_frame_005.jpg">
+                <img src="/static/images/samples/added37_frame_005.jpg">
+            </div>
+        </li>
+
+        
+    </ul>
+</section>
+
 {% endblock %}

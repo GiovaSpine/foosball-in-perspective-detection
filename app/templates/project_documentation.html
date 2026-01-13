@@ -216,24 +216,35 @@
             The graphs and some of the observations are summarized below:
             <ul>
                 <li>
-                    Shapes, Resolution and Aspect Ratio
+                    Shapes and Aspect Ratio
                     <p>
                         <strong>Note:</strong> No images were padded to obtain shapes different from the original photograph.
                     </p>
+                    <p>
+                        The analysis shows that the vast majority of images are <em>horizontal rectangle</em>,
+                        with an aspect ratio around 1.77, and so will have to apply crop-based transformations to
+                        mitigate this big discrepancy.
+                    </p>
+                    <div class="gallery">
+                        <img src="/static/images/graphs/Shape (Added).png">
+                        <img src="/static/images/graphs/Ratio (Added).png">
+                    </div>
+                </li>
+                <li>
+                    Resolution
                     <p>
                         We define <em>high-resolution</em> images as those whose longest side is greater than 640 pixels. Such images are
                         downscaled by YOLO during preprocessing. Conversely, <em>low-resolution</em> images are upscaled using
                         interpolation, which may introduce artifacts and potential bias.
                     </p>
                     <p>
-                        The analysis shows that the vast majority of images are <em>high-resolution horizontal rectangle</em>,
-                        with an aspect ratio around 1.77, and so with data augmentation we will have to mitigate this big discrepancy.
+                        The analysis shows that the vast majority of images are <em>high-resolution</em>,
+                        and so we will have to apply resizing transformations to mitigate this big discrepancy.
                     </p>
                     <div class="gallery">
-                        <img src="/static/images/graphs/Shape (Added).png">
                         <img src="/static/images/graphs/Resolution (Added).png">
-                        <img src="/static/images/graphs/Ratio (Added).png">
                     </div>
+                    
                 </li>
                 <li>
                     Brightness and Saturation
@@ -267,7 +278,7 @@
                         of the image.
                     </p>
                     <p>
-                        With data augmentation we will try to apply scale-based transformations ans traslations to generate augmented images
+                        With data augmentation we will try to apply scale and traslation transformations to generate augmented images
                         in a not centered position.
                     </p>
                     <div class="gallery">
@@ -278,11 +289,9 @@
                 <li>
                     Directions
                     <p>
-                        For <em>direction</em> we refer to the vector that goes from the center of the table, calculated as
-                        the intersection between the line that goes from the first keypoint to the third, and the line that goes
-                        from the second to the fourth, to the vanishing point for the y axis, calculated as
-                        the intersection between the line that goes from the first keypoint to the fourth, and the line that goes
-                        from the second to the third.
+                        For <em>direction</em> we refer to the vector that goes from the center of the table to the vanishing point
+                        for the y axis, calculated as the intersection between the line that goes from the first keypoint to the fourth,
+                        and the line that goes from the second to the third.
                     </p>
                     <p>
                         In the following image below, the direction is rapresented as the green y arrow.
@@ -414,96 +423,128 @@
         <hr>
 
         <p>
-            <strong>Note:</strong> The data augmentation guided by distributions obtained from the image and annotation analysis
+            The data augmentation guided by distributions obtained from the image and annotation analysis
             was applied <strong>after</strong> the one guided by K-Means, just discussed.
         </p>
 
         <p>
-            On the left, the previously discussed data analysis graphs are shown, while on the right the effect of this final data augmentation step is presented.
-            This comparison highlights how the overall data distribution changes and provides insight into how these modifications may influence the model's
-            training behavior and generalization performance, which will be discussed in the following section.
+            On the left, the previous data analysis graphs are shown, while on the right the effect of this final
+            data augmentation step is presented. This comparison highlights how the overall data distribution changes and
+            provides insight into how these modifications may influence the model's training behavior and generalization performance,
+            which will be discussed in the following section.
         </p>
         
         <ul>
             <li>
-                yo
+                Shape and Aspect Ratio
+                <p>
+                    The graphs indicate that, although data augmentation improves the balance of shapes and aspect ratios,
+                    a significant discrepancy still remains. As a result, the model is expected to perform better on
+                    horizontally oriented rectangular images, particularly those with an aspect ratio close to 1.77,
+                    which remain the most represented in the dataset.
+                </p>
                 <div class="gallery">
                     <img src="/static/images/graphs/Shape (Added).png">
                     <img src="/static/images/graphs/Shape (Augmented).png">
                 </div>
-            </li>
-            <li>
-                yo
                 <div class="gallery">
                     <img src="/static/images/graphs/Ratio (Added).png">
                     <img src="/static/images/graphs/Ratio (Augmented).png">
                 </div>
             </li>
             <li>
-                yo
+                Resolution
+                <p>
+                    The graphs show an improved balance between high and low resolution images after data augmentation
+                    and therefore, the model is expected to exhibit more consistent performance across different resolution levels.
+                </p>
                 <div class="gallery">
                     <img src="/static/images/graphs/Resolution (Added).png">
                     <img src="/static/images/graphs/Resolution (Augmented).png">
                 </div>
             </li>
             <li>
-                yo
+                Brightness and Saturation
+                <p>
+                    The augmented data graphs appear slightly more balanced than the original ones, which were already well balanced
+                    prior to data augmentation. This indicates that the augmentation process further reinforced an already stable distribution
+                    rather than correcting a major imbalance.
+                </p>
                 <div class="gallery">
                     <img src="/static/images/graphs/Brightness (Added).png">
                     <img src="/static/images/graphs/Brightness (Augmented).png">
                 </div>
-            </li>
-            <li>
-                yo
                 <div class="gallery">
                     <img src="/static/images/graphs/Saturation (Added).png">
                     <img src="/static/images/graphs/Saturation (Augmented).png">
                 </div>
             </li>
             <li>
-                yo
+                Centers
+                <p>
+                    The data augmentation process increased the coverage of table positions within the image.
+                    However, since the majority of the dataset still contains foosball tables located near the center of the image,
+                    it is reasonable to expect the model to achieve its best performance when the table is positioned
+                    close to the image center.
+                </p>
                 <div class="gallery">
                     <img src="/static/images/graphs/Centers (Added).png">
                     <img src="/static/images/graphs/Centers (Augmented).png">
                 </div>
-            </li>
-            <li>
-                yo
                 <div class="gallery">
                     <img src="/static/images/graphs/Centers Heatmap (Added).png">
                     <img src="/static/images/graphs/Centers Heatmap (Augmented).png">
                 </div>
             </li>
             <li>
-                yo
+                Directions
+                <p>
+                    The graph shows that data augmentation increased the range of table directions covered in the dataset.
+                    However, the number of images at these extreme angles remains limited, and the overall angle distribution
+                    appears largely unchanged. As a result, the model is expected to perform poorly for table that
+                    deviate significantly from a vertical direction around 90 degrees.
+                </p>
                 <div class="gallery">
                     <img src="/static/images/graphs/Directions (Added).png">
                     <img src="/static/images/graphs/Directions (Augmented).png">
                 </div>
-            </li>
-            <li>
-                yo
                 <div class="gallery">
                     <img src="/static/images/graphs/Theta (Added).png">
                     <img src="/static/images/graphs/Theta (Augmented).png">
                 </div>
             </li>
+                
             <li>
-                yo
+                Size
+                <p>
+                    The graph shows a more evenly distributed range of foosball table sizes,
+                    indicating an improved balance after data augmentation.
+                </p>
                 <div class="gallery">
                     <img src="/static/images/graphs/BBox Dimension (Added).png">
                     <img src="/static/images/graphs/BBox Dimension (Augmented).png">
                 </div>
             </li>
             <li>
-                yo
+                Visibilities
+                <p>
+                    The data augmentation graph appears largely unchanged, indicating that this particular imbalance
+                    was not addressed. As a consequence, the model is expected to perform poorly in scenarios where
+                    one of the first four keypoints is occluded.
+                    Additionally, degraded performance is also expected when at least one of keypoints 6 or 7 has zero visibility,
+                    meaning it lies outside the image boundaries.
+                </p>
                 <div class="gallery">
                     <img src="/static/images/graphs/Visibilities (Added).png">
                     <img src="/static/images/graphs/Visibilities (Augmented).png">
                 </div>
             </li>
         </ul>
-
+        
+        <p>
+            At the end, the data augmentation produced a dataset of 8,303 images, from an original
+            dataset of 1,128 images.
+        </p>
 
     </section>
 
@@ -519,6 +560,13 @@
             The dataset was divided into a training set of 6,190 images and a validation set of 2,113 images, with no test set,
             because a further division of the data could have reduced the training set size too much, and therefore no
             hyperparameter fine-tuning was performed.
+        </p>
+
+        <p>
+            The division was made using the clusters obtained with K-Means clustering with K=20.
+            Each cluster was assigned to either the training or validation set in order to reach the desired set sizes.
+            The idea is that different clusters capture different visual characteristics and therefore, this strategy helps
+            ensure that the validation set does not contain images that are too similar to those seen during training.
         </p>
 
         <p>

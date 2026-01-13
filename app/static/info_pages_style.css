@@ -3,7 +3,7 @@
 section {
     margin: auto;
     width: 85%;
-    max-width: 1000px;
+    max-width: 1050px;
     margin-bottom: 3rem;
     padding: 1rem 1.5rem;
     background-color: #fff;
@@ -39,7 +39,10 @@ section ul li {
     margin-bottom: 0.5rem;
 }
 
-.gallery, .small_gallery, .big_gallery {
+.gallery,
+.small_gallery,
+.big_gallery,
+.really_big_gallery {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
@@ -60,8 +63,13 @@ section ul li {
     width: 48%;
 }
 
+.really_big_gallery img{
+    width: 75%;
+}
+
 .results{
     width: 80%;
+    margin-bottom: 3rem;
 }
 
 
