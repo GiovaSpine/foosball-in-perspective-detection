@@ -74,14 +74,9 @@
     </p>
     <ul>
         <li>
-            We can see, like expected, that the model performs better with horizontal shapes
-            <div class="gallery">
-                <img src="/static/images/page-images/Example1.png">
-                <img src="/static/images/page-images/Example1.png">
-            </div>
-        </li>
-        <li>
-            We can see, like expected, that the model performs poorly with rotated images
+            As expected, the model performs poorly on images, with a not vertical direction (angle different from 90 degrees). 
+            This behavior is consistent with the dataset distribution, as there are very few images with table orientations 
+            differing from 90 degrees, and the model has therefore seen limited examples of such cases during training.
             <div class="really_big_gallery">
                 <img src="/static/images/samples/added52_frame_027.jpg">
                 <img src="/static/images/samples/added54_frame_049.jpg">
@@ -92,8 +87,8 @@
         </li>
 
         <li>
-            We can see, like expected, that the model performs poorly with one of the
-            first four keypoints occluded
+            As expected, the model performs poorly when at least one of the first four keypoints is occluded (visibilty 1),
+            following the analyzed visibilites graph distribution.
             <div class="really_big_gallery">
                 <img src="/static/images/samples/index88_frame_023.jpg">
                 <img src="/static/images/samples/index88_frame_024.jpg">
@@ -101,8 +96,8 @@
         </li>
 
         <li>
-            We can see, like expected, that the model performs poorly with one of the
-            keypoits 6 or 7 outside the image
+            As expected, the model performs poorly when the keypoint 6 or/and 7 are outside the image boundaries (visibilty 0),
+            following the analyzed visibilites graph distribution.
             <div class="really_big_gallery">
                 <img src="/static/images/samples/index20_frame_025.jpg">
                 <img src="/static/images/samples/index71_frame_017.jpg">
@@ -111,13 +106,16 @@
         </li>
 
         <li>
-            Anche se i keypoint non sono occlusi ma c'è un ostacolo si comporta peggio
+            When an obstacle partially covers the table but none of the keypoints, 
+            the model's performance can be slightly degraded. 
+            To illustrate this, we show a comparison between an image with an obstacle and the corresponding image without it.
             <div class="really_big_gallery">
                 <img src="/static/images/samples/Screenshot (646).jpg">
                 <img src="/static/images/samples/Screenshot (625).jpg">
             </div>
             <p>
-                Though this problem doesn't seem to worse to much the performance se è lieve
+                However, if the obstacle is minor or not very intrusive, the impact on predictions is minimal, 
+                and the model still produces accurate keypoint annotations.
             </p>
             <div class="really_big_gallery">
                 <img src="/static/images/samples/added29_frame_026.jpg">
@@ -126,10 +124,51 @@
         </li>
 
         <li>
-            We can see, like expected, that the model perform better with the image in the center
+            We expected the model to perform better when the table is located near the center of the image,
+            since most training images are centered. 
+            To test this, we can compare predictions on the original centered images with predictions 
+            on artificially translated versions, where the table was shifted far from the center(via mirroring and translation).
+            The examples below show that the model produces virtually identical predictions in both cases,
+            demonstrating robustness to table displacement within the image.
             <div class="really_big_gallery">
-                <img src="/static/images/page-images/Example1.png">
-                <img src="/static/images/page-images/Example1.png">
+                <img src="/static/images/samples/index102_frame_012.jpg">
+                <img src="/static/images/samples/index102_frame_012_not_centered.jpg">
+            </div>
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/added33_frame_003.jpg">
+                <img src="/static/images/samples/added33_frame_003_not_centered.jpg">
+            </div>
+        </li>
+
+        <li>
+            To evaluate the effect of image shapes on the training, we compare predictions on an horizontal image with
+            a vertically cropped version of the same scene.
+            The annotations produced by the model are slightly different between the two versions, but this difference
+            is very small compared to the large imbalance we had between horizontal and vertical images in the dataset. 
+            This suggests that the model has learned to generalize effectively across different table shapes.
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/added37_frame_009.jpg">
+                <img src="/static/images/samples/added37_frame_009_vertical.jpg">
+            </div>
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/added29_frame_019.jpg">
+                <img src="/static/images/samples/added29_frame_019_vertical.jpg">
+            </div>
+        </li>
+
+        <li>
+            We expected the model to perform very similarly on both high and low resolution images.
+            To evaluate this behavior, we compare predictions obtained from high-resolution images
+            with those produced on scaled-down versions of the same images.
+            The examples below show that the model generates virtually identical predictions in both cases,
+            indicating good robustness to changes in image resolution.
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/Foto 196 scaled down.jpg">
+                <img src="/static/images/samples/Foto 196.jpg">
+            </div>
+            <div class="really_big_gallery">
+                <img src="/static/images/samples/index109_frame_020_scaled_down.jpg">
+                <img src="/static/images/samples/index109_frame_020.jpg">
             </div>
         </li>
     </ul>
@@ -146,8 +185,8 @@
     <ul>
         <li>
             The model doesn't appear to work well on images captured at a humel eye level viewpoint,
-            with a not zoomed camera (low focal length) of white colored foosball table,
-            even tough K-Means appeard to show a decent amount of those images.
+            with a non-zoomed camera (low focal length) of white-colored foosball tables,
+            even tough K-Means suggested that a decent amount of these images are present in the dataset.
             <div class="really_big_gallery">
                 <img src="/static/images/samples/index2_frame_013.jpg">
                 <img src="/static/images/samples/index59_frame_014.jpg">
@@ -160,8 +199,8 @@
         </li>
 
         <li>
-            But we can see that regardless if the viewpoint height and focal length are higher, the model
-            work slighlt better, but doesn't perform perfectly.
+            Overall, the model tends to perform slightly better on images captured from higher viewpoints
+            with higher focal lengths, but performance is still not perfect, for white colored-foosball tables.
             <div class="really_big_gallery">
                 <img src="/static/images/samples/index86_frame_034.jpg">
                 <img src="/static/images/samples/index83_frame_003.jpg">
@@ -170,14 +209,15 @@
         </li>
 
         <li>
-            The problem of the low focal length and low height viewpoint doesn't seem to affect only white colored table.
+            The issue observed with low focal length and low viewpoint height is not limited to white-colored tables. 
+            The examples below illustrate that similar performance degradation occurs with other table colors. 
             <div class="really_big_gallery">
                 <img src="/static/images/samples/index14_frame_017.jpg">
                 <img src="/static/images/samples/index9_frame_015.jpg">
             </div>
-            This is strange, because K-Means seemed to suggest a higher amount of images with a low focal lenght.
-            The problem is probably mostly caused by the humal eye level viewpoint, rather than the low focal length,
-            since we can see in the following image that the focal length is not high, and the model performed much better.
+            This is somewhat surprising, as K-Means suggested a relatively large number of images with low focal length in the dataset. 
+            The problem seems to be primarily caused by the human eye level viewpoint rather than the focal length itself. 
+            This is supported by the example below, where the focal length is still low but the model performs much better.
             <div class="really_big_gallery">
                 <img src="/static/images/samples/index113_frame_001.jpg">
             </div>
@@ -205,8 +245,54 @@
             </div>
         </li>
 
-        
     </ul>
+
+    <hr>
+
+    <h3>Conclusions and Recommendations for Optimal Predictions</h3>
+    
+    <p>
+        Based on the qualitative analysis, the model performs best under the following conditions:
+    </p>
+
+    <ul>
+        <li>
+            <strong>Table direction:</strong> The model requires the foosball table to be vertical in the image, 
+            as most training images have this orientation, resulting in poor performance if this condition is not met. 
+        </li>
+        <li>
+            <strong>Keypoints visibility:</strong> The model requires the first four keypoints to always be visible, and
+            the keypoints 6 and 7 to be in the image boundaries, as if these conditions are not met, the model will
+            perform poorly.
+        </li>
+        <li>
+            <strong>Table occlusion:</strong> The model is robust to obstacles covering part of the table (without occluding any keypoint).
+            However, this robustness has limits: as the size or severity of the occlusion increases, the model's performance
+            progressively degrades, leading to less accurate keypoint predictions.
+        </li>
+        <li>
+            <strong>Table position:</strong> The model is robust to different positions in the image.
+        </li>
+        <li>
+            <strong>Image shape:</strong> The model is robust to different image shapes.
+        </li>
+        <li>
+            <strong>Resolution:</strong> The model is robust to different image resolutions.
+        </li>
+        <li>
+            <strong>Viewpoint and focal length:</strong> Images captured from higher viewpoints and with moderate to high zoom (focal length) 
+            tend to give the best predictions, while very low viewpoints or low focal length images may lead to degraded performance.
+        </li>
+        <li>
+            <strong>Table color:</strong> While the model has learned to generalize across different table colors, 
+            darker tables with good contrast against the background tend to be predicted more reliably.
+        </li>
+    </ul>
+
+    <p>
+        Following these guidelines should help users obtain the best possible predictions from the model.
+    </p>
+
 </section>
 
 {% endblock %}
