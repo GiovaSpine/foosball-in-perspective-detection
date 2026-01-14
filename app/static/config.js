@@ -26,5 +26,5 @@ export const messages = {
     no_image_provided: "No image is provided.",
     no_valid_prediction: "Invalid prediction: YOLO was not able to produce keypoints.\n(remember that the model requires an image of a foosball table in a spectator view)",
     translate_position_instructions: "Select a point inside the highlighted area",
-    
+    keypoints_cleaned: "The keypoints were cleaned."
 }

@@ -229,7 +229,7 @@ def calculate_intersection(line1: tuple, line2: tuple) -> tuple:
 
 # ALGORITHMS
 
-def translate_point(point: list | tuple | np.ndarray, lower_keypoints: list, threasold: float=0.001, max_iterations: int=100) -> list:
+def translate_point(point: list | tuple | np.ndarray, lower_keypoints: list, threshold: float=0.001, max_iterations: int=100) -> list:
     '''
     Converts a point from the coordinate system of the image to the coordinate system of the quadrilateral.
     Given lower_keypoints: the 4 point that form the quadrilateral in the image coordinate system,
@@ -245,7 +245,7 @@ def translate_point(point: list | tuple | np.ndarray, lower_keypoints: list, thr
     Parameters:
     point (list, tuple or np.ndarray): The point, in the image coordinate system, to translate
     lower_keypoints (list): The keypoints that form the quadrilateral
-    threasold (float): The min distance the calculated translated point should have from the real one
+    threshold (float): The min distance the calculated translated point should have from the real one
     max_iterations (int): The max amount of iterations the algorithm should do
 
     Returns:
@@ -254,10 +254,10 @@ def translate_point(point: list | tuple | np.ndarray, lower_keypoints: list, thr
     # check parameters
     check_point(point)
     check_quadrilateral(lower_keypoints)
-    if not isinstance(threasold, float):
-        raise TypeError("threasold has to be a float")
-    if threasold <= 0.0:
-        raise ValueError("threasold has to be > 0")
+    if not isinstance(threshold, float):
+        raise TypeError("threshold has to be a float")
+    if threshold <= 0.0:
+        raise ValueError("threshold has to be > 0")
     if not isinstance(max_iterations, int):
         raise TypeError("max_iterations has to be a int")
     if max_iterations < 1:
@@ -302,7 +302,7 @@ def translate_point(point: list | tuple | np.ndarray, lower_keypoints: list, thr
         center = calculate_intersection((v0, v2), (v1, v3))
 
         # is center close to enough to the point ?
-        if np.linalg.norm(np.array(point) - np.array(center)) <= threasold:
+        if np.linalg.norm(np.array(point) - np.array(center)) <= threshold:
             break
         
         try:
@@ -453,6 +453,7 @@ def calculate_player_lines(keypoints: list) -> list:
     return player_lines
 
 
+"""
 def keypoints_cleaning(keypoints: list) -> list:
     '''
     '''
@@ -518,4 +519,57 @@ def keypoints_cleaning(keypoints: list) -> list:
         raise AlgorithmFailedError("Unable to clean keypoints")
 
     return keypoints
+"""
 
+
+def keypoints_cleaning(keypoints: list, width: int, height: int) -> list:
+    '''
+    '''
+    # check parameteres
+    check_keypoints(keypoints)
+    if not isinstance(width, int):
+        raise TypeError("width has to be an integer")
+    if width <= 0:
+        raise ValueError("width has to be > 0")
+    if not isinstance(height, int):
+        raise TypeError("height has to be an integer")
+    if height <= 0:
+        raise ValueError("height has to be > 0")
+
+    # we will assume that the keypoints 0, 1, 2, 3, 4, 5 are correct
+    # (upper rectangle + the 2 keypoints under 0 and 1)
+    # and so we have the following consequence:
+    # - the vp_z given by 0_4, 1_5 is correct
+    # - the vp_y given by 0_3, 1_2 is correct
+
+    # let's work in normalized coordinates
+    kps = [[x / width, y / height] for x, y in keypoints]
+
+    try:
+        vp_z = calculate_intersection((kps[0], kps[4]), (kps[1], kps[5]))
+        vp_y = calculate_intersection((kps[0], kps[3]), (kps[1], kps[2]))
+
+        # let's try to find the keypoint 7, by finding the intersection between
+        # the line that goes from the keypoint 3 to vp_z 
+        # and the line that goes from the keypoint 4 to vp_y
+        calculated_7 = calculate_intersection((kps[3], vp_z), (kps[4], vp_y))
+
+        # let's try to find the keypoint 6, by finding the intersection between
+        # the line that goes from the keypoint 2 to vp_z 
+        # and the line that goes from the keypoint 5 to vp_y
+        calculated_6 = calculate_intersection((kps[2], vp_z), (kps[5], vp_y))
+
+        # the min distance a keypoint should have from the calculated one to be considered wrong
+        MIN_DISTANCE = 0.075
+        
+        if np.linalg.norm(np.array(kps[7]) - np.array(calculated_7)) > MIN_DISTANCE:
+            keypoints[7] = [calculated_7[0] * width, calculated_7[1] * height]
+        
+        if np.linalg.norm(np.array(kps[6]) - np.array(calculated_6)) > MIN_DISTANCE:
+            keypoints[6] = [calculated_6[0] * width, calculated_6[1] * height]
+ 
+    except Exception as e:
+        print(e)
+        raise AlgorithmFailedError("Unable to clean keypoints")
+
+    return keypoints

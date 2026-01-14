@@ -22,7 +22,7 @@
         with only one table for reliable results.
     </p>
     <p>
-        As a result you should expect:
+        As a result for the output you should expect:
         <ul>
             <li>
                 "keypoints" to be an array that contain a single array of 8 keypoints as <code>[x1, x2]</code>
@@ -67,10 +67,28 @@
     <p>
         Cleans raw predicted keypoints data by following perspective rules, to improve accuracy and consistency.
     </p>
+    <p>
+        Requires:
+        <ul>
+            <li>The keypoints in pixel coordinates.</li>
+            <li>The width of the image in pixels.</li>
+            <li>The height of the image in pixels.</li>
+        </ul>
+    </p>
+    <p>
+        The output follows the same format as the input keypoints.
+    </p>
+    <br>
     <ul>
         <li>Method: POST</li>
-        <li>JSON body: <pre>{"keypoints": [[x1, y1], [x2, y2], ..., [x8, y8]]}</pre></li>
-        <li>Response JSON: <pre>{"keypoints": [[x1, y1], [x2, y2], ..., [x8, y8]]}</pre></li>
+        <li>JSON body: <pre>
+{
+    "keypoints": [[x1, y1], [x2, y2], ..., [x8, y8]],
+    "width": &lt;image_width_in_pixels&gt;,
+    "height": &lt;image_height_in_pixels&gt; 
+}
+</pre></li>
+        <li>Response JSON: <pre>{"cleaned_keypoints": [[x1, y1], [x2, y2], ..., [x8, y8]]}</pre></li>
     </ul>
 </section>
 
@@ -78,12 +96,22 @@
     <h3>/translate-position</h3>
     <p>
         Translates a point from image coordinates (pixel space) to normalized table coordinates.
-        The transformation is computed using the last four detected keypoints, corresponding to
-        the lower vertices of the table (play area).
     </p>
 
     <p>
-        The input point must be expressed in pixel coordinates relative to the image.
+        Requires:
+        <ul>
+            <li>
+                The last four detected keypoints in pixel coordinates, corresponding to
+                the lower vertices of the table (play area).
+            </li>
+            <li>
+                The point to translate, expressed in pixel coordinates.
+            </li>
+        </ul>
+    </p>
+
+    <p>
         The output is a normalized 2D point in a coordinate system, where the origin is 
         located at the center of the play area and the <code>x</code> axis goes towards
         the line formed by the keypoint 5 and 6, and the <code>y</code> axis goes towards
@@ -112,6 +140,16 @@
         Calculates the estimated positions of the 8 foosball player lines, each rapresented as
         <code>[[x1, y1], [x2, y2]]</code> in image coordinates, based on all detected keypoints.
     </p>
+    <p>
+        Requires:
+        <ul>
+            <li>The keypoints in pixel coordinates.</li>
+        </ul>
+    </p>
+    <p>
+        The output is an array of 8 lines, where a line is <code>[[x1, y1], [x2, y2]]</code> in image coordinates.
+    </p>
+    <br>
     <ul>
         <li>Method: POST</li>
         <li>JSON body: <pre>{"keypoints": [[x1, y1], [x2, y2], ..., [x8, y8]]}</pre></li>

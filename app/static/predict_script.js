@@ -28,6 +28,7 @@ pctx.fillRect(0, 0, photo_canvas.width, photo_canvas.height);
 draw_reference();
 
 // button functions
+window.clean_keypoints = clean_keypoints;
 window.toggle_keypoints = toggle_keypoints;
 window.toggle_bounding_box = toggle_bounding_box;
 window.toggle_play_area = toggle_play_area;
@@ -101,35 +102,15 @@ photo_input.addEventListener("change", async (e) => {
   formData.append("photo", file);
 
   // receive the prediction
-  const response1 = await fetch("/predict", {
+  const response = await fetch("/predict", {
     method: "POST",
     body: formData
   });
 
-  let prediction = await response1.json();
-  console.log(prediction)
-
-  if (prediction.keypoints.length != 0) {
-    // let's use the clean keypoints API
-    const response2 = await fetch("/clean-keypoints", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        keypoints: prediction.keypoints[0],
-      })
-    });
-    if (!response2.ok) {
-      const err = await response2.json();
-      message.textContent = "Error: " + err.error;
-    } else {
-      const cleaned_keypoints = await response2.json();
-      prediction.keypoints[0] = cleaned_keypoints.keypoints;
-    }
-
-  }
+  let prediction = await response.json();
   state.prediction = prediction;
+  // save the prediction in the session
+  sessionStorage.setItem("prediction", JSON.stringify(state.prediction));
 
   // check the prediction
   if (state.prediction.keypoints.length == 0) {
@@ -153,9 +134,6 @@ photo_input.addEventListener("change", async (e) => {
       update_icons();
     }
   }
-
-  // save the prediction in the session
-  sessionStorage.setItem("prediction", JSON.stringify(state.prediction));
 
   // show the image and the results on the canvas
   const url = URL.createObjectURL(file);
@@ -194,7 +172,6 @@ async function get_player_lines() {
   const data = await response.json();
   const player_lines = data.player_lines;
   state.player_lines = player_lines;
-  console.log(player_lines)
   return true
 }
 
@@ -270,6 +247,47 @@ function check_photo_and_prediction() {
 }
 
 
+async function clean_keypoints() {
+  if (state.prediction.keypoints.length != 0) {
+    // let's use the clean keypoints API
+    const response = await fetch("/clean-keypoints", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        keypoints: state.prediction.keypoints[0],
+        width: state.photo.width,
+        height: state.photo.height
+      })
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      message.textContent = "Error: " + err.error;
+    } else {
+      const cleaned_keypoints = await response.json();
+      message.textContent = messages.keypoints_cleaned;
+      state.prediction.keypoints[0] = cleaned_keypoints.cleaned_keypoints;
+      // save the prediction in the session
+      sessionStorage.setItem("prediction", JSON.stringify(state.prediction));
+
+      // maybe there were player lines, that need to be updated
+      if (state.toggle_player_lines) {
+        // there can be an error, like one of the faces on the side is not convex
+        const result = await get_player_lines();
+        if (!result) {
+          state.toggle_player_lines = false;
+          update_icons();
+        }
+      }
+      draw_photo();
+    }
+  } else {
+    message.textContent = messages.no_valid_prediction;
+  }
+}
+
+
 function toggle_keypoints() {
   if (!check_photo_and_prediction()) return;
 
@@ -342,6 +360,7 @@ async function toggle_player_lines() {
 
 function enable_buttons(enable) {
   // enable or disable all buttons
+  document.getElementById("clean_keypoints").disabled = !enable;
   document.getElementById("photo_input").disabled = !enable;
   document.getElementById("toggle_keypoints").disabled = !enable;
   document.getElementById("toggle_bounding_box").disabled = !enable;

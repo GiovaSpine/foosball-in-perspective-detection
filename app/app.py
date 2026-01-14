@@ -60,8 +60,6 @@ def predict():
 
     os.remove(filepath)
 
-    print(result.keypoints.conf)
-
     keypoints = []
     if result.keypoints is not None:
         for kps in result.keypoints.xy:
@@ -162,19 +160,24 @@ def get_player_lines():
 
 @app.route("/clean-keypoints", methods=["POST"])
 def clean_keypoints():
-    # we receive all the keypoints
+    # we receive keypoints, width and height
     data = request.get_json()
 
     if not data:
         return jsonify({"error": "No JSON body"}), 400
 
     keypoints = data.get("keypoints")
+    width = data.get("width")
+    height = data.get("height")
 
     if not keypoints:
-        return jsonify({"error": "Missing data"}), 400
+        return jsonify({"error": "Missing keypoints data"}), 400
+
+    if width is None or height is None:
+        return jsonify({"error": "Missing width or height"}), 400
     
     try:
-        cleaned_keypoints = keypoints_cleaning(keypoints)
+        cleaned_keypoints = keypoints_cleaning(keypoints, width, height)
 
     except AlgorithmFailedError as e:
         return jsonify(error=str(e)), 500
@@ -189,7 +192,7 @@ def clean_keypoints():
         return jsonify(error="Unexpected error"), 500
     
     return jsonify({
-        "keypoints": cleaned_keypoints,
+        "cleaned_keypoints": cleaned_keypoints,
     })
 
 
