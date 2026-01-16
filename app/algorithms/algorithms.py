@@ -387,12 +387,13 @@ def translate_point(point: list | tuple | np.ndarray, lower_keypoints: list, thr
 
 def calculate_player_lines(keypoints: list) -> list:
     '''
-    Calculates the player lines (the 8 lines where the are the small statues of football players)
+    Calculates the player lines (the 8 lines where the are the small statues of football players).
 
-    :param keypoints: Description
-    :type keypoints: list
-    :return: Description
-    :rtype: list
+    Parameters:
+    keypoints (list): The keypoints from which the player lines will be calculated
+
+    Returns:
+    list: The player lines, each rapresented as [[x1, y1], [x2, y2]]
     '''
 
     # check parameters
@@ -416,14 +417,23 @@ def calculate_player_lines(keypoints: list) -> list:
         # vanishing_point_z_1 should in theory be equal to vanishing_point_z_2; in practice we take the average
         vanishing_point_z = ((vp_z_1[0] + vp_z_2[0]) / 2.0, (vp_z_1[1] + vp_z_2[1]) / 2.0)
 
-        def get_center(centers, iteration, v0, v1, v2, v3):
+        def get_center(centers: list, iteration: int, v0: list, v1: list, v2: list, v3: list) -> None:
             '''
-            Docstring for get_center
-            
-            :param v0: Description
-            :param v1: Description
-            :param v2: Description
-            :param v3: Description
+            Appends the center of the quadrilateral v0, v1, v2, v3 to the centers list
+            and calls get_center on the new two quadrilateral divided by the center,
+            stopping if iteration is greater or equal than N_DIVISIONS.
+            It's a recursive function.
+
+            Parameters:
+            centers (list): The list where the calculated center will be appended
+            iteration (int): The current iteration
+            v0 (list): The highest vertex
+            v1 (list): The vertex undex v0
+            v2 (list): The lowest vertex
+            v3 (list): The vertex above v2
+
+            Returns:
+            None
             '''
             center = calculate_intersection((v0, v2), (v1, v3))
             
@@ -439,6 +449,7 @@ def calculate_player_lines(keypoints: list) -> list:
 
         centers_face_1 = []
         centers_face_2 = []
+
         # left face given by 0, 3, 4, 7 keypoints
         get_center(centers_face_1, 0, keypoints[0], keypoints[4], keypoints[7], keypoints[3])
         # right face given by 1, 2, 5, 6
@@ -453,77 +464,19 @@ def calculate_player_lines(keypoints: list) -> list:
     return player_lines
 
 
-"""
-def keypoints_cleaning(keypoints: list) -> list:
-    '''
-    '''
-    # check parameteres
-    check_keypoints(keypoints)
-
-    # we will assume that the vanishing point for the z axis given by the lines 0_4 and 1_5 is correct
-    # then we will check if the lines 2_6 and 3_7 tends to go towards that vanshing point
-    try:
-        vp_z_1 = calculate_intersection((keypoints[0], keypoints[4]), (keypoints[1], keypoints[5]))
-        vp_z_2 = calculate_intersection((keypoints[2], keypoints[5]), (keypoints[6], keypoints[7]))
-
-        MAX_VPS_Z_DISTANCE = 2500  # found empirically
-        
-        if np.linalg.norm(np.array(vp_z_1) - vp_z_2) > MAX_VPS_Z_DISTANCE:
-            # considering vp_z_1 correct
-            # we have to recompute the keypoint 6 and 7
-
-            vp_y = calculate_intersection((keypoints[0], keypoints[3]), (keypoints[1], keypoints[2]))
-            vp_x = calculate_intersection((keypoints[0], keypoints[1]), (keypoints[2], keypoints[3]))
-
-            MIN_DEGREES_DIFFERENCE = 5.0
-
-            # for the keypoint 6 the idea is to:
-            # find the intersection between the line that goes from 5 to vp_y and the line that goes from 2 to vp_z_1
-
-            vector_6_to_z = np.array(vp_z_1) - np.array(keypoints[6])
-            vector_6_to_z_degrees = np.degrees(np.arctan2(vector_6_to_z[1], vector_6_to_z[0]))
-
-            vector_5_to_y = np.array(keypoints[5]) - np.array(vp_y)
-            vector_5_to_y_degrees = np.degrees(np.arctan2(vector_5_to_y[1], vector_5_to_y[0]))
-
-            if abs(vector_6_to_z_degrees - vector_5_to_y_degrees) < MIN_DEGREES_DIFFERENCE:
-                # the angles are to similar (the two lines are similar)
-                # it happens when the face on the right side is barely visible
-                # we can find the intersection between the line that goes from 7 to vp_x and the line that goes from 2 to vp_z_1
-                new_keypoint_6 = calculate_intersection((keypoints[7], vp_x), (keypoints[2], vp_z_1))
-            else:
-                # we can compute with the intersection between the line that goes from 5 to vp_y and the line that goes from 2 to vp_z_1
-                new_keypoint_6 = calculate_intersection((keypoints[5], vp_y), (keypoints[2], vp_z_1))
-
-            # for the keypoint 7 the idea is to:
-            # find the intersection between the line that goes from 4 to vp_y and the line that goes from 3 to vp_z_1
-
-            vector_7_to_z = np.array(vp_z_1) - np.array(keypoints[7])
-            vector_7_to_z_degrees = np.degrees(np.arctan2(vector_7_to_z[1], vector_7_to_z[0]))
-
-            vector_4_to_y = np.array(keypoints[4]) - np.array(vp_y)
-            vector_4_to_y_degrees = np.degrees(np.arctan2(vector_4_to_y[1], vector_4_to_y[0]))
-
-            if abs(vector_7_to_z_degrees - vector_4_to_y_degrees) < MIN_DEGREES_DIFFERENCE:
-                # the angles are to similar (the two lines are similar)
-                # it happens when the face on the right side is barely visible
-                # we can find the intersection between the line that goes from 6 to vp_x and the line that goes from 3 to vp_z_1
-                new_keypoint_7 = calculate_intersection((keypoints[6], vp_x), (keypoints[3], vp_z_1))
-            else:
-                # we can compute with the intersection between the line that goes from 4 to vp_y and the line that goes from 3 to vp_z_1
-                new_keypoint_7 = calculate_intersection((keypoints[4], vp_y), (keypoints[3], vp_z_1))
-    
-            keypoints[6] = new_keypoint_6
-            keypoints[7] = new_keypoint_7
-    except Exception:
-        raise AlgorithmFailedError("Unable to clean keypoints")
-
-    return keypoints
-"""
-
-
 def keypoints_cleaning(keypoints: list, width: int, height: int) -> list:
     '''
+    Cleans the keypoints following perpective rules.
+    Requires width and height of the image to be able to decide to clean
+    a keypoint or not without being influenced by the image size.
+
+    Parameters:
+    keypoints (list): The keypoints to clean
+    width (int): The width of the image
+    height (int): The height of the image
+
+    Returns:
+    list: The cleaned keypoints
     '''
     # check parameteres
     check_keypoints(keypoints)

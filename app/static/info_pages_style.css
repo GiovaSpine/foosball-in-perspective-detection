@@ -56,6 +56,8 @@ section ul li {
 }
 
 .small_gallery img {
+    object-fit: contain;
+    border-radius: 0;
     width: 28%;
 }
 
@@ -67,7 +69,11 @@ section ul li {
     width: 80%;
 }
 
-.results{
+.big_results h3 {
+    text-align: center;
+}
+
+.big_results img{
     width: 80%;
     margin-bottom: 3rem;
 }

@@ -7,7 +7,29 @@ from utility import *
 class SetsDivision:
     def __init__(self, train_len: int, val_len: int, test_len: int):
         '''
+        Constructor for the SetsDivision class.
+
+        Parameters:
+        train_len (int): The length the train set should have
+        val_len (int): The length the val set should have
+        test_len (int): The length the test set should have
         '''
+        # check parameters
+        if not isinstance(train_len, int):
+            raise TypeError(f"Warning: train_len must be an integer. {type(train_len)} given")
+        if train_len < 0:
+            raise ValueError(f"Warning: train_len must be >= 0. {train_len} given")
+        
+        if not isinstance(val_len, int):
+            raise TypeError(f"Warning: val_len must be an integer. {type(val_len)} given")
+        if val_len < 0:
+            raise ValueError(f"Warning: val_len must be >= 0. {val_len} given")
+        
+        if not isinstance(test_len, int):
+            raise TypeError(f"Warning: test_len must be an integer. {type(test_len)} given")
+        if test_len < 0:
+            raise ValueError(f"Warning: test_len must be >= 0. {test_len} given")
+
         self.train = []
         self.val = []
         self.test = []
@@ -16,9 +38,20 @@ class SetsDivision:
         self.test_len = test_len
         self.index = 0
         
-    def add(self, cluster: list):
+    def add(self, cluster: list) -> None:
         '''
+        Adds a cluster to one of train, val and test sets.
+
+        Parameters:
+        cluster (list): The cluster as a list of image names without extension
+
+        Returns:
+        None
         '''
+        if not isinstance(cluster, list):
+            raise TypeError("Warning: cluster should be a list")
+        if not all(isinstance(image, str) for image in cluster):
+            raise ValueError("Warning: cluster should contain strings, that are image names")
 
         paths = []
         for image_name in cluster:
@@ -66,20 +99,14 @@ class SetsDivision:
                     return
             else:
                 self.index = (self.index + 1) % 3
-
-    def full(self):
-        '''
-        '''
-        result = (len(self.train) == self.train_len) and(len(self.val) == self.val_len) and (len(self.test) == self.test_len)
-        return result
     
-    def add_augmented(self):
+    def add_augmented(self) -> None:
         '''
+        Adds the augmented images to the sets that contain their source/original image.
+        For example: if "image 1.jpg" (source/original image) is in the val set,
+        the image "augmented_1_image 1.jpg" (augmented counterpart) has to be added to the
+        val set, to avoid contamination (the validation set contains images close to the training ones).
         '''
-        # we have to grab the original source images of the sets, to add the corresponing augmented images
-        # because we can't have for example "image 1.png" in the validation set, and in the train set
-        # the image augmented_1_image 1.png
-
         print("Adding augmented images...")
 
         aug_image_form = get_augmented_image_name("").split("_")
@@ -114,31 +141,37 @@ class SetsDivision:
                 with open(TEST_TXT_DIRECTORY, 'a' ) as f:
                     f.write(f"{aug_img}\n")
             
-    def save(self):
+    def save(self) -> None:
         '''
+        Saves the sets as train.txt, val.txt and test.txt, in a predefined directory,
+        each containg image paths of those sets.
         '''
-        def save_paths_to_txt(paths_list, output_file):
-            '''
-            '''
-            with open(output_file, 'w') as f:
-                for path in paths_list:
-                    f.write(f"{path}\n")
-            print(f"Saved image paths in {output_file}")
-        
-        save_paths_to_txt(self.train, TRAIN_TXT_DIRECTORY)
-        save_paths_to_txt(self.val, VALIDATION_TXT_DIRECTORY)
-        save_paths_to_txt(self.test, TEST_TXT_DIRECTORY)
+        # train
+        with open(TRAIN_TXT_DIRECTORY, 'w') as f:
+            for path in self.train,:
+                f.write(f"{path}\n")
+        print(f"Saved image paths in {TRAIN_TXT_DIRECTORY}")
+
+        # val
+        with open(VALIDATION_TXT_DIRECTORY, 'w') as f:
+            for path in self.val,:
+                f.write(f"{path}\n")
+        print(f"Saved image paths in {VALIDATION_TXT_DIRECTORY}")
+
+        # test
+        with open(TEST_TXT_DIRECTORY, 'w') as f:
+            for path in self.test,:
+                f.write(f"{path}\n")
+        print(f"Saved image paths in {TEST_TXT_DIRECTORY}")
 
 
-def divide_data_sets(k: int, train_len: int, val_len: int, test_len: int) -> None:
+def divide_dataset(k: int, train_len: int, val_len: int, test_len: int) -> None:
     '''
-    Given a k (number of clusters) greater than 3, and a split for the default + added
-    dataset, as train_len, val_len, test_len, it produces train.txt, val.txt, test.txt,
-    by taking 3 images at a time from each cluster, in the hope to have different images
-    in each set.
-    The train set will have all the augmented images.
-    The files train.txt, val.txt, test.txt will contain paths of the images, and will be
-    used by yolo.
+    Given a k (number of clusters) greater than 3, and a division of the number of images
+    of the default + added dataset, asas train_len, val_len, test_len,
+    it divides the dataset into a train, val and test set and 
+    creates train.txt, val.txt, and test.txt in a predefined directory,
+    where the absolute paths of the images will be written and used by yolo.
 
     Parameters:
     k (int): The clustering analyisis/division done for that k (number of clusters)
@@ -149,26 +182,46 @@ def divide_data_sets(k: int, train_len: int, val_len: int, test_len: int) -> Non
     Returns:
     None
     '''
+    # check parameters
+    if not isinstance(k, int):
+        raise TypeError(f"Warning: k must be an integer. {type(k)} given")
     if k < 3 or k > MAX_N_CLUSTERS:
-        raise ValueError(f"Warning: k must be an integer between 3 and {MAX_N_CLUSTERS}")
+        raise ValueError(f"Warning: k must between 3 and {MAX_N_CLUSTERS}")
+    
+    if not isinstance(train_len, int):
+        raise TypeError(f"Warning: train_len must be an integer. {type(train_len)} given")
+    if train_len < 0:
+        raise ValueError(f"Warning: train_len must be >= 0. {train_len} given")
+    
+    if not isinstance(val_len, int):
+        raise TypeError(f"Warning: val_len must be an integer. {type(val_len)} given")
+    if val_len < 0:
+        raise ValueError(f"Warning: val_len must be >= 0. {val_len} given")
+    
+    if not isinstance(test_len, int):
+        raise TypeError(f"Warning: test_len must be an integer. {type(test_len)} given")
+    if test_len < 0:
+        raise ValueError(f"Warning: test_len must be >= 0. {test_len} given")
 
-    # of course the validation and test set can't have augmented images
-    # so we will split the default + added dataset for the 3 sets
-    # and the train set will have all the augmented images
+    # load the clustering (we need to know in which cluster each image belongs)
     all_clustering_labels = load_all_clustering_label(ADDED_CLUSTERING_DIRECTORY)
 
     # dictionary to group images (cluster_id -> [list of image names])
     clusters = defaultdict(list)
-
-    sets_division = SetsDivision(train_len, val_len, test_len)
-
     for img_name, values in all_clustering_labels.items():
         # we have to group based on the value of the element of index (k - MIN_N_CLUSTERS)
         # of the labels list
         index = k - MIN_N_CLUSTERS
         key = values[index]
         clusters[key].append(img_name)
+
+    # object to divide the dataset
+    sets_division = SetsDivision(train_len, val_len, test_len)
     
+    # let's assign each cluster for a specific set
+    # the idea is that different clusters contain different images
+    # and so the validation set for example, shouldn't contain
+    # images too similar to the ones of the training set
     for cluster_id in range(0, k):  
         sets_division.add(clusters[cluster_id])
 
@@ -186,7 +239,5 @@ def divide_data_sets(k: int, train_len: int, val_len: int, test_len: int) -> Non
 
     sets_division.save()
 
-    print(f"Saved augmented image paths in {TRAIN_TXT_DIRECTORY}")
 
-
-divide_data_sets(k=20, train_len=800, val_len=328, test_len=0)
+divide_dataset(k=20, train_len=800, val_len=328, test_len=0)

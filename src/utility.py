@@ -124,7 +124,16 @@ def label_loading(label_path: str) -> tuple:
 
 def denormalize(width: int, height: int, bounding_box: list = None, keypoints: list = None) -> tuple:
     '''
+    Denormalize the keypoints or the bounding_box or both.
 
+    Parameters:
+    width (int): The width of the image
+    height (int): The height of the image
+    bounding_box (list): The bounding_box or None if there is no need to denormalize it
+    keypoints (list): The keypoints or None if there is no need to denormalize them
+
+    Returns:
+    tuple: The denormalized results as (bounding_box, keypoints)
     '''
     if bounding_box != None:
         bounding_box = (bounding_box[0] * width, bounding_box[1] * height, bounding_box[2] * width, bounding_box[3] * height)
@@ -137,7 +146,16 @@ def denormalize(width: int, height: int, bounding_box: list = None, keypoints: l
 
 def normalize(width: int, height: int, bounding_box: list = None, keypoints: list = None) -> tuple:
     '''
+    Normalize the keypoints or the bounding_box or both.
 
+    Parameters:
+    width (int): The width of the image
+    height (int): The height of the image
+    bounding_box (list): The bounding_box or None if there is no need to normalize it
+    keypoints (list): The keypoints or None if there is no need to normalize them
+
+    Returns:
+    tuple: The normalized results as (bounding_box, keypoints)
     '''
     if bounding_box is not None:
         bounding_box = (bounding_box[0] / width, bounding_box[1] / height, bounding_box[2] / width, bounding_box[3] / height)

@@ -1,24 +1,7 @@
 import os
-from functools import wraps
 from torch import Tensor
 from torchvision import transforms
 from PIL import Image, ImageOps
-
-
-
-
-def validate_image_path(func):
-    """
-    Decorator to validate that the first argument `img_path` exists
-    before executing the wrapped function.
-    """
-    @wraps(func)
-    def wrapper(img_path, *args, **kwargs):
-        if not os.path.exists(img_path):
-            raise ValueError(f"The following provided path doesn't exist: {img_path}")
-        return func(img_path, *args, **kwargs)
-    return wrapper
-
 
 
 def _pad_image(image: Image) -> Image:
@@ -43,7 +26,6 @@ def _pad_image(image: Image) -> Image:
     return padded_img
 
 
-@validate_image_path
 def process_image_for_ViT(image_path: str) -> Tensor:
     '''
     Given the path of an image, it applies the padding, scales the padded image
@@ -55,6 +37,10 @@ def process_image_for_ViT(image_path: str) -> Tensor:
     Returns:
     Tensor: The converted padded image to a tensor
     '''
+
+    if not os.path.exists(image_path):
+        raise ValueError(f"The following provided path doesn't exist: {image_path}")
+    
     img = Image.open(image_path).convert("RGB")
     padded_img = _pad_image(img)
 
@@ -66,32 +52,6 @@ def process_image_for_ViT(image_path: str) -> Tensor:
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5, 0.5, 0.5],
                              std=[0.5, 0.5, 0.5]),
-    ])
-
-    return transform(resized_img)
-
-
-@validate_image_path
-def process_image_for_YOLO(image_path: str) -> Tensor:
-    '''
-    Given the path of an image, it applies the padding, scales the padded image
-    to the input dimension of the model YOLO and converts the image to a tensor.
-
-    Parameter:
-    img_path (string): The path of the image
-
-    Returns:
-    Tensor: The converted padded image to a tensor
-    '''
-    img = Image.open(image_path).convert("RGB")
-    padded_img = _pad_image(img)
-
-    SIZE = 640
-    resized_img = padded_img.resize((SIZE, SIZE))
-    
-    # transformation
-    transform = transforms.Compose([
-        transforms.ToTensor(),
     ])
 
     return transform(resized_img)

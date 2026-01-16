@@ -121,6 +121,8 @@ def get_clustering_filename(k: int) -> str:
     Returns:
     str: The filename
     '''
+    if not isinstance(k, int):
+        raise TypeError("Warning: k has to be a string")
     if k < MIN_N_CLUSTERS or k > MAX_N_CLUSTERS:
         raise ValueError("k has to be in the interval [{MIN_N_CLUSTERS}, {MAX_N_CLUSTERS}]")
     
@@ -137,6 +139,8 @@ def get_cluster_counts_image_filename(k: int) -> str:
     Returns:
     str: The filename
     '''
+    if not isinstance(k, int):
+        raise TypeError("Warning: k has to be a string")
     if k < MIN_N_CLUSTERS or k > MAX_N_CLUSTERS:
         raise ValueError("k has to be in the interval [{MIN_N_CLUSTERS}, {MAX_N_CLUSTERS}]")
     
@@ -154,9 +158,12 @@ def get_cluster_image_filename(k: int, cluster_id: int) -> str:
     Returns:
     str: The filename
     '''
+    if not isinstance(k, int):
+        raise TypeError("Warning: k has to be a string")
     if k < MIN_N_CLUSTERS or k > MAX_N_CLUSTERS:
         raise ValueError("k has to be in the interval [{MIN_N_CLUSTERS}, {MAX_N_CLUSTERS}]")
-    
+    if not isinstance(cluster_id, int):
+        raise TypeError("Warning: cluster_id has to be a string")
     if cluster_id < 0 or cluster_id >= k:
         raise ValueError(f"cluster_id has to be in the interval [0, {k - 1}]")
     
@@ -173,6 +180,9 @@ def get_augmented_image_name(source_image_name: str) -> str:
     Returns:
     str: The filename in the form prefix_number_source image name.extension
     '''
+    if not isinstance(source_image_name, str):
+        raise TypeError("Warning: source_image_name has to be a string")
+    
     # it has to have a structure: prefix_number_source image name.extension
 
     folder = Path(AUGMENTED_IMAGES_DATA_DIRECTORY)
@@ -208,6 +218,3 @@ N_SAMPLES_FOR_MAX_N_CLUSTERS = 15  # the number of samples images for every clus
 
 MIN_THETA = 40.0
 MAX_THETA = 140.0
-
-
-# =========================================================

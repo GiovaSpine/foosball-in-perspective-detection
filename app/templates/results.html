@@ -37,11 +37,12 @@
         unseen scenarios. We can see some examples below.
     </p>
 
-    <div class="gallery">
-        <img src="/static/images/page-images/Example1.png">
-        <img src="/static/images/page-images/Example2.png">
-        <img src="/static/images/page-images/Example3.png">
-        <img src="/static/images/page-images/Example4.png">
+    <div class="really_big_gallery">
+         <img src="/static/images/samples/added17_frame_029_bad.jpg">
+        <img src="/static/images/samples/index14_frame_017_bad.jpg">
+        <img src="/static/images/samples/index88_frame_020_bad.jpg">
+        <img src="/static/images/samples/Foto 24 bad.jpg">
+        <img src="/static/images/samples/added27_frame_014_bad.jpg">
     </div>
 
     <p>
@@ -62,7 +63,18 @@
 
 </section>
 
-<img src="/static/images/graphs/results.png" class="results">
+
+<div class="big_results">
+    <h3>Labels</h3>
+    <img src="/static/images/samples/val_batch0_labels.jpg">
+
+    <h3>Predictions</h3>
+    <img src="/static/images/samples/val_batch0_pred.jpg">
+
+    <h3>Results</h3>
+    <img src="/static/images/graphs/results.png">
+</div>
+
 
 <section>
     <h2>Qualitative Analysis and Expected Behavior</h2>
@@ -74,7 +86,7 @@
     </p>
     <ul>
         <li>
-            As expected, the model performs poorly on images, with a not vertical direction (angle different from 90 degrees). 
+            As expected, the model performs poorly on images with a not vertical direction (angle different from 90 degrees). 
             This behavior is consistent with the dataset distribution, as there are very few images with table orientations 
             differing from 90 degrees, and the model has therefore seen limited examples of such cases during training.
             <div class="really_big_gallery">
@@ -99,7 +111,6 @@
             As expected, the model performs poorly when the keypoint 6 or/and 7 are outside the image boundaries (visibilty 0),
             following the analyzed visibilites graph distribution.
             <div class="really_big_gallery">
-                <img src="/static/images/samples/index20_frame_025.jpg">
                 <img src="/static/images/samples/index71_frame_017.jpg">
                 <img src="/static/images/samples/index83_frame_010.jpg">
             </div>

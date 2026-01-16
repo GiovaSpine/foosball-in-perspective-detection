@@ -139,7 +139,7 @@
                     into light and dark images, with the lighter images being slightly more numerous.
                     <div class="small_gallery">
                         <img src="/static/images/samples/Screenshot (476).png">
-                        <img src="/static/images/samples/index102_frame_006.jpg">
+                        <img src="/static/images/samples/index102_frame_006_kmeans.jpg">
                     </div>
                 </li>
                 <li>
@@ -365,6 +365,30 @@
             The applied transformations were not drastic, in order to ensure that the augmented images
             would still belong to the same cluster as their original source images.
         </p>
+
+        <p>
+            A few examples of the data augmentation are presented below: on the left we have the source/original image
+            while on the right we have the augmented version generated.
+            <div class="small_gallery">
+                <img src="/static/images/samples/added20_frame_019_source.jpg">
+                <img src="/static/images/samples/added20_frame_019_aug.png">
+            </div>
+            <div class="small_gallery">
+                <img src="/static/images/samples/added30_frame_013_source.jpg">
+                <img src="/static/images/samples/added30_frame_013_aug.png">
+            </div>
+            <div class="small_gallery">
+                <img src="/static/images/samples/index62_frame_029_source.jpg">
+                <img src="/static/images/samples/index62_frame_029_aug.png">
+            </div>
+            <div class="small_gallery">
+                <img src="/static/images/samples/index88_frame_001_source.jpg">
+                <img src="/static/images/samples/index88_frame_001_aug.png">
+            </div>
+        </p>
+
+        <br>
+
         <p>
             For each value of K in {2, 3, 4, 5, 6}, the graphs below compare the distribution of images across
             clusters before and after the data augmentation guided by K-Means. The plots on the left show the
@@ -420,12 +444,41 @@
             indicating a clearer balancing effect.
         </p>
 
+        <br>
         <hr>
-
+        <br>
+        
         <p>
             The data augmentation guided by distributions obtained from the image and annotation analysis
             was applied <strong>after</strong> the one guided by K-Means, just discussed.
         </p>
+
+        <p>
+            A few examples of the data augmentation are presented below: on the left we have the source/original image
+            while on the right we have the augmented version generated.
+            <div class="small_gallery">
+                <img src="/static/images/samples/added43_frame_017_source.jpg">
+                <img src="/static/images/samples/added43_frame_017_aug.png">
+            </div>
+            <div class="small_gallery">
+                <img src="/static/images/samples/added95_frame_002_source.jpg">
+                <img src="/static/images/samples/added95_frame_002_aug.png">
+            </div>
+            <div class="small_gallery">
+                <img src="/static/images/samples/index6_frame_012_source.jpg">
+                <img src="/static/images/samples/index6_frame_012_aug.png">
+            </div>
+            <div class="small_gallery">
+                <img src="/static/images/samples/index62_frame_011_source.jpg">
+                <img src="/static/images/samples/index62_frame_011_aug.png">
+            </div>
+            <div class="small_gallery">
+                <img src="/static/images/samples/index80_frame_009_source.jpg">
+                <img src="/static/images/samples/index80_frame_009_aug.png">
+            </div>
+        </p>
+
+        <br>
 
         <p>
             On the left, the previous data analysis graphs are shown, while on the right the effect of this final

@@ -367,3 +367,6 @@ def remove_some_clustering_augmented_data():
 
     print(f"Removed {n_removed} images in total")
 
+
+clustering_data_augmentation()
+remove_some_clustering_augmented_data()

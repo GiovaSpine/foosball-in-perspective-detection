@@ -919,6 +919,9 @@ def delete_too_augmented_images(index_threshold: int) -> None:
 
 def dataframes_data_augmentation():
     '''
+    Generate new augmented images from the default + added dataset
+    guided by image and labels dataframes.
+    Saves the images and labels in the augmented-data folder
     '''
 
     # it's better if we don't apply data augmention on augmented images

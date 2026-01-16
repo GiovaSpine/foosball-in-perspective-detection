@@ -1,6 +1,5 @@
 import os
 import argparse
-import sys
 import torch
 import numpy as np
 from sklearn.cluster import KMeans
@@ -19,6 +18,11 @@ def get_number_of_samples(n_clusters: int) -> int:
     Returns:
     int: The number of samples to collect for the given n_clusters
     '''
+    if not isinstance(n_clusters, int):
+        raise TypeError("Warning: n_cluster should be an integer")
+    if n_clusters < MIN_N_CLUSTERS or n_clusters > MAX_N_CLUSTERS:
+        raise ValueError(f"Warning: n_clusters should be between [{MIN_N_CLUSTERS}, {MAX_N_CLUSTERS}]")
+
     # Calculate the number of samples using the function f(x) = m * x + q
     # where f(x) is the number of samples and x is n_clusters
     # we know that f(MIN_N_CLUSTERS) = N_SAMPLES_FOR_MIN_N_CLUSTERS and f(MAX_N_CLUSTERS) = N_SAMPLES_FOR_MAX_N_CLUSTERS
@@ -38,13 +42,13 @@ def get_samples_and_centroids(k: int, kmeans: KMeans, X: np.ndarray, image_names
     If collect_random = True the selection of the samples is done by selecting half of the n_samples randomly,
     and the other half by incrementing the distance from the centroids, ignoring those in the selection.
     Otherwise if collect_random = False the selection of the samples is done only by incrementing distance.
-    Note that some clusters might have less that n_samples elements, and so the function will return the
+    Note that some clusters might have less than n_samples elements, and so the function will return the
     amout of elements that the cluster have.
 
     Parameters:
     k (int): The number of clusters
     kmeans (KMeans): The KMeans object that divided the images in clusters
-    X (ndarray): The arrays (n_samples, n_features) that kmeans fitted in clusters
+    X (ndarray): The arrays (n_images, n_features) that kmeans fitted in clusters
     image_names (list): The list of image's names in the same order of X
     n_samples (int): The number of samples to collect
     collect_random (bool): If the selection of samples have to include random points (default False)
@@ -52,15 +56,27 @@ def get_samples_and_centroids(k: int, kmeans: KMeans, X: np.ndarray, image_names
     Returns:
     list: The collected samples for every cluster for this k
     '''
-    if not all(isinstance(x, str) for x in image_names):
-        raise ValueError("image_names has to be a list of names")
-    
+    # check parameters
+    if not isinstance(kmeans, KMeans):
+        raise TypeError("kmeans type has to be KMeans")
+
+    if not isinstance(k, int):
+        raise TypeError("k has to be an integer")
     if k != kmeans.cluster_centers_.shape[0]:
-        raise ValueError(f"k it's not equal to n_clusters of kmeans = {kmeans.cluster_centers_.shape[0]}")
+        raise ValueError(f"The given k={k} it's not equal to n_clusters of kmeans = {kmeans.cluster_centers_.shape[0]}")
+
+    if not isinstance(image_names, list):
+        raise TypeError("image_names has to be a list")
+    if not all(isinstance(x, str) for x in image_names):
+        raise ValueError("image_names has to contain strings, that corresponds to image names")
+    
+    if not isinstance(X, np.ndarray):
+        raise TypeError("X has to be a ndarray")
     
     if X.ndim != 2:
         raise ValueError("X has to be a bidimensional array")
-    
+    if X.shape[0] != len(image_names):
+        raise ValueError("X[0] and image_names have different lengths")
     if X.shape[1] != kmeans.cluster_centers_.shape[1]:
         raise ValueError("X and kmeans have a different n_features")
     
@@ -86,7 +102,7 @@ def get_samples_and_centroids(k: int, kmeans: KMeans, X: np.ndarray, image_names
         sorted_indexes = np.argsort(distances)  # points closest to centroid first
         
         # decide how many samples to take by each method
-        # if collect_random = True, half of the samples will be collected randomly and the other half by incrementig distance
+        # if collect_random = True, half of the samples will be collected randomly and the other half by incrementing distance
         # otherwise samples are only collected by incrementing distance
         if collect_random:
             n_distance = actual_n_samples // 2
@@ -141,12 +157,12 @@ def clustering(clustering_path: str, *feature_paths: str) -> None:
     Returns:
     None
     '''
-
+    # check parameters
     if not os.path.exists(clustering_path):
         raise ValueError(f"clustering_path provided doesn't exists: {clustering_path}")
     for fpath in feature_paths:
         if not os.path.exists(fpath):
-            raise ValueError(f"clustering_path provided doesn't exists: {fpath}") 
+            raise ValueError(f"feature_path provided doesn't exists: {fpath}") 
         
     features = []  # this list will contain all features
     image_names = []  # this list will contain the names of the images in the same order of features
@@ -166,12 +182,12 @@ def clustering(clustering_path: str, *feature_paths: str) -> None:
             features.append(feature)
             image_names.append(os.path.splitext(feature_name)[0])
 
-    # X has to be (n_samples, n_features)
+    # X has to be (n_images, n_features)
     X = np.vstack(features)
-    
 
-    all_labels = {image_name: [] for image_name in image_names}  # this dictionary will contain for each image's name (key) the label for each cluster
-
+    # this dictionary will contain for each image's name (key) the label for each cluster
+    # we need this to know each image in which cluster it belogs to, for every k
+    all_labels = {image_name: [] for image_name in image_names}
 
     # apply kmeans with many different k
     for k in range(MIN_N_CLUSTERS, MAX_N_CLUSTERS + 1):
@@ -221,6 +237,8 @@ def clustering(clustering_path: str, *feature_paths: str) -> None:
 
 # =============================================================================
 
+# executable from the terminal as:
+# > python clustering.py {DEFAULT, ADDED, AUGMENTED}
 
 def execute_clustering(dataset: str) -> None:
     '''

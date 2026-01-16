@@ -168,8 +168,8 @@ def load_images_dataframe(*paths_to_look) -> pd.DataFrame:
 
 # =============================================================================
 
-# load the dataframes and save them as .parquet
-
+# executbale from the terminal as
+# > python dataframes_preparation.py {IMAGES,LABELS} {DEFAULT,ADDED,AUGMENTED}
 
 def save_dataframe(df_to_generate: str, df_version: str) -> None:
     '''
@@ -177,7 +177,7 @@ def save_dataframe(df_to_generate: str, df_version: str) -> None:
     
     Parameters:
     df_to_generate: {IMAGES, LABELS}
-    df_versione: {DEFAULT, ADDED, AUGMENTED}
+    df_version: {DEFAULT, ADDED, AUGMENTED}
 
     Returns:
     None
@@ -185,7 +185,7 @@ def save_dataframe(df_to_generate: str, df_version: str) -> None:
     if df_to_generate not in ["IMAGES", "LABELS"]:
         raise ValueError(f"Error: not valid df_to_generate: {df_to_generate} not in  [IMAGES, LABELS]")
     if df_version not in ["DEFAULT", "ADDED", "AUGMENTED"]:
-        raise ValueError(f"Error: not valid df_versione: {df_version} not in  [DEFAULT, ADDED, AUGMENTED]")
+        raise ValueError(f"Error: not valid df_version: {df_version} not in  [DEFAULT, ADDED, AUGMENTED]")
 
     print(f"Loading dataframe for {df_to_generate}, with the {df_version} dataset...")
 

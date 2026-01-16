@@ -53,6 +53,8 @@ yolo*.pt
 app/algorithms/__pycache__
 
 app/static/images/samples/*.jpg
+app/static/images/samples/*.png
 
 src/test.py
 results/test/
+test/
