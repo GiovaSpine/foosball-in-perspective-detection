@@ -512,13 +512,13 @@ def keypoints_cleaning(keypoints: list, width: int, height: int) -> list:
         # and the line that goes from the keypoint 5 to vp_y
         calculated_6 = calculate_intersection((kps[2], vp_z), (kps[5], vp_y))
 
-        # the min distance a keypoint should have from the calculated one to be considered wrong
-        MIN_DISTANCE = 0.075
+        # the max distance a keypoint should have from the calculated one to be considered wrong
+        MAX_DISTANCE = 0.06
         
-        if np.linalg.norm(np.array(kps[7]) - np.array(calculated_7)) > MIN_DISTANCE:
+        if np.linalg.norm(np.array(kps[7]) - np.array(calculated_7)) > MAX_DISTANCE:
             keypoints[7] = [calculated_7[0] * width, calculated_7[1] * height]
         
-        if np.linalg.norm(np.array(kps[6]) - np.array(calculated_6)) > MIN_DISTANCE:
+        if np.linalg.norm(np.array(kps[6]) - np.array(calculated_6)) > MAX_DISTANCE:
             keypoints[6] = [calculated_6[0] * width, calculated_6[1] * height]
  
     except Exception as e:
