@@ -13,19 +13,38 @@ from config import *
 
 def load_clustering_data(clustering_path: str) -> dict:
     '''
-    Load clustering data as a dictionary in the form {k, data}.
+    Load clustering data as a dictionary in the form {k, data},
+    with k going from MIN_N_CLUSTERS to MAX_N_CLUSTERS and
+    where data is a dictionary containing:
+    - inertia_score: float
+    - silhouette_score: float
+    - cluster_counts: list of number of images each cluster has
+    - centroids: list of name of images rapresenting centroids for each cluster
+    - samples: list of lists containing samples (image names) for every cluster
     
     Parameters:
-        clustering_path (str): The path where the results of the clustering will be saved.
+        clustering_path (str): The path where the results of the clustering were saved as json.
     
     Returns:
         dict: The dictionary in the form {k, data}
     '''
+    if not os.path.exists(clustering_path):
+        raise FileNotFoundError(f"The path {clustering_path} does not exist")
+    
     # get all the clustering json files (we have to ingore other types of json files)
     clustering_filename = re.sub(r'\d+', '*', get_clustering_filename(MIN_N_CLUSTERS))
     json_files = list(Path(clustering_path).glob(clustering_filename))
 
-    def get_k_from_json(json_file):
+    def get_k_from_json(json_file: str) -> int:
+        '''
+        Extracts the value of k from a JSON file.
+
+        Parameters:
+        json_file (str): Path to the JSON file containing a key k
+
+        Returns:
+        int: The value associated with the key k in the JSON file
+        '''
         # get k value from a json
         with open(json_file, "r") as f:
             data = json.load(f)
@@ -45,10 +64,13 @@ def load_clustering_data(clustering_path: str) -> dict:
 
 def load_all_clustering_label(clustering_path: str) -> dict:
     '''
-    Load all_clustering_label as a dictionary in the form {image name, list}.
+    Load all_clustering_label as a dictionary in the form {image name, list},
+    where list says for each k, in which cluster the image belongs to.
+    For example list[0] = 1 means that for k = MIN_N_CLUSTERS the image
+    belongs to the cluster 1.
     
     Parameters:
-        clustering_path (str): The path where the results of the clustering where saved.
+        clustering_path (str): The path where the results of the clustering were saved as json.
     
     Returns:
         dict: The dictionary in the form {image name, list}
@@ -57,6 +79,98 @@ def load_all_clustering_label(clustering_path: str) -> dict:
         data = json.load(f)
 
     return data
+
+#----------------------------------------------------------
+
+# ERROR CHECKING
+
+
+def check_keypoints(keypoints: list) -> None:
+    '''
+    Checks if keypoint is a list of 8 elements that are lists of 2 floats.
+    Raises error if the condition is not met.
+
+    Parameter:
+    keypoints (list): The list of keypoints to check
+
+    Returns:
+    None
+    '''
+    # keypoints has to be a list
+    if not isinstance(keypoints, list):
+        raise TypeError(f"keypoints needs to be a list: {type(keypoints)} given")
+    # keypoints has to have 8 elements
+    if len(keypoints) != 8:
+        raise ValueError(f"keypoints needs to have 8 elements: {len(keypoints)} given")
+    # every element has to be a list or tuple of 2 floats or ints
+    for kp in keypoints:
+        if not isinstance(kp, (list, tuple)):
+            raise TypeError(f"keypoints needs to contain lists: {type(kp)} given")
+        if len(kp) != 2:
+            raise ValueError(f"the lists or tuples of keypoints need to have 2 elements: {len(kp)} given")
+        if not all(isinstance(x, (float, int)) for x in kp):
+            raise ValueError(f"the lists or tuples of keypoints need to have 2 floats or ints")
+
+
+def check_bounding_box(bounding_box: list) -> None:
+    '''
+    Checks if bounding_box is a list of 4 elements that are 4 floats or int.
+    Raises error if the condition is not met.
+
+    Parameter:
+    bounding_box (list): The bounding_box to check
+
+    Returns:
+    None
+    '''
+    # bounding_box has to be a list
+    if not isinstance(bounding_box, list):
+        raise TypeError(f"bounding_box needs to be a list: {type(bounding_box)} given")
+    # bounding_box has to have 4 elements
+    if len(bounding_box) != 4:
+        raise ValueError(f"bounding_box needs to have 4 elements: {len(bounding_box)} given")
+    # every element has to be a float or int
+    if not all(isinstance(x, (float, int)) for x in bounding_box):
+        raise ValueError(f"bounding_box needs to have 4 floats or ints")
+
+
+def check_point(point: list | tuple | np.ndarray) -> None:
+    '''
+    Checks if point is a list of 2 floats.
+    Raises error if the condition is not met.
+
+    Parameter:
+    point (list or tuple): The point to check
+
+    Returns:
+    None
+    '''
+    if not isinstance(point, (list, tuple, np.ndarray)):
+        raise TypeError(f"point needs to be a list or tuple: {type(point)} given")
+    if len(point) != 2:
+        raise ValueError(f"point needs to contain 2 elements: {len(point)} given")
+    if not all(isinstance(x, (float, int, np.floating, np.integer)) for x in point):
+        raise TypeError(f"point needs to contain 2 floats or ints")
+
+
+def check_line(line: list | tuple) -> None:
+    '''
+    Checks if line is a list of 2 lists that each contain 2 floats.
+    Raises error if the condition is not met.
+
+    Parameter:
+    line (list or tuple): The line in the form [p1, p2] or (p1, p2) where p1 and p2 are bidimensional points
+
+    Returns:
+    None
+    '''
+    if not isinstance(line, (list, tuple)):
+        raise TypeError("line needs to be a list or tuple")
+    if len(line) != 2:
+        raise ValueError("line needs to contain 2 elements")
+    check_point(line[0])
+    check_point(line[1])
+
 
 # ---------------------------------------------------------
 
@@ -71,7 +185,7 @@ def find_image_path(image_name: str, *paths_to_look: str) -> str | None:
         paths_to_look: One or more paths to search the image
     
     Returns:
-        str o None: Complete path if found, None otherwise
+        str or None: Complete path if found, None otherwise
     '''
     for path in paths_to_look:
         for ext in IMAGES_DATA_EXTENSIONS:
@@ -90,7 +204,7 @@ def find_label_path(label_name: str, *paths_to_look: str) -> str | None:
         paths_to_look: One or more paths to search the image
     
     Returns:
-        str o None: Complete path if found, None otherwise
+        str or None: Complete path if found, None otherwise
     '''
     for path in paths_to_look:
         candidate_path = os.path.join(path, label_name + LABELS_EXTENSION)
@@ -110,7 +224,10 @@ def label_loading(label_path: str) -> tuple:
     '''
     with open(label_path) as label:
         content = label.readline()
-    numbers = [float(x) for x in content[1:].split()]  # we ignore the first number that is always 0, because we only have one class, the foosball table
+    
+    # the annotation, have a number for the class tha is always 0
+    # because we only have one class, the foosball table
+    numbers = [float(x) for x in content[1:].split()]  
     
     # the bounding box is rapresented as x and y of the center of the rectangle, and width and height of the rectangle
     bounding_box = (numbers[0], numbers[1], numbers[2], numbers[3])
@@ -124,7 +241,7 @@ def label_loading(label_path: str) -> tuple:
 
 def denormalize(width: int, height: int, bounding_box: list = None, keypoints: list = None) -> tuple:
     '''
-    Denormalize the keypoints or the bounding_box or both.
+    Denormalizes the keypoints and the bounding_box.
 
     Parameters:
     width (int): The width of the image
@@ -135,10 +252,18 @@ def denormalize(width: int, height: int, bounding_box: list = None, keypoints: l
     Returns:
     tuple: The denormalized results as (bounding_box, keypoints)
     '''
+    # check parameters
+    if not isinstance(width, int) and width <= 0:
+        raise ValueError("width has to be a positive integer greater than 0")
+    if not isinstance(height, int) and height <= 0:
+        raise ValueError("height has to be a positive integer greater than 0")
+    
     if bounding_box != None:
+        check_bounding_box(bounding_box)
         bounding_box = (bounding_box[0] * width, bounding_box[1] * height, bounding_box[2] * width, bounding_box[3] * height)
     
     if keypoints != None:
+        check_keypoints(keypoints)
         for i in range(0, 8):
             keypoints[i] = (keypoints[i][0] * width, keypoints[i][1] * height, keypoints[i][2])
 
@@ -146,7 +271,7 @@ def denormalize(width: int, height: int, bounding_box: list = None, keypoints: l
 
 def normalize(width: int, height: int, bounding_box: list = None, keypoints: list = None) -> tuple:
     '''
-    Normalize the keypoints or the bounding_box or both.
+    Normalizes the keypoints and the bounding_box.
 
     Parameters:
     width (int): The width of the image
@@ -157,10 +282,18 @@ def normalize(width: int, height: int, bounding_box: list = None, keypoints: lis
     Returns:
     tuple: The normalized results as (bounding_box, keypoints)
     '''
+    # check parameters
+    if not isinstance(width, int) and width <= 0:
+        raise ValueError("width has to be a positive integer greater than 0")
+    if not isinstance(height, int) and height <= 0:
+        raise ValueError("height has to be a positive integer greater than 0")
+    
     if bounding_box is not None:
+        check_bounding_box(bounding_box)
         bounding_box = (bounding_box[0] / width, bounding_box[1] / height, bounding_box[2] / width, bounding_box[3] / height)
     
     if keypoints is not None:
+        check_keypoints(keypoints)
         for i in range(0, 8):
             keypoints[i] = (keypoints[i][0] / width, keypoints[i][1] / height, keypoints[i][2])
 
@@ -181,6 +314,10 @@ def calculate_intersection(line1: tuple, line2: tuple) -> tuple:
     Returns:
     tuple: The point of intersection if it exists
     '''
+    # check parameters
+    check_line(line1)
+    check_line(line2)
+
     x_diff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
     y_diff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
 
@@ -305,6 +442,8 @@ def max_centered_scale(width: int, height: int, keypoints: list, margin_px: floa
     Returns:
     float: The calculated max scale
     '''
+    check_keypoints(keypoints)
+
     # coordinates extraction
     pts = []
     for kp in keypoints:
@@ -355,7 +494,7 @@ def max_centered_scale(width: int, height: int, keypoints: list, margin_px: floa
     return min(max_scale, float(max_scale))
 
 
-def min_centered_scale(width: int, height: int, keypoints: list, margin_px: float = 0.0, min_scale: float = 1.2) -> float:
+def min_centered_scale(width: int, height: int, keypoints: list, margin_px: float = 0.0, min_scale: float = 0.5) -> float:
     '''
     Calculates the min scale possible to apply in the center of the image, so that the reflection don't have the foosball table
     To limit the scale there is the min_scale parameter.
@@ -394,7 +533,13 @@ def min_centered_scale(width: int, height: int, keypoints: list, margin_px: floa
     scale_3 = height / ((2 * lower_dist) + height)
     scale_4 = height / ((2 * upper_dist) + height)
 
-    return max(scale_1, scale_2, scale_3, scale_4)
+    calcualted_scale = max(scale_1, scale_2, scale_3, scale_4)
+    
+    # to not scale too much 
+    if calcualted_scale < min_scale:
+        return min_scale
+    else:
+        return calcualted_scale
 
 
 def find_max_traslation(width: int, height: int, keypoints: list, affine_scale: float, margin_px=5.0) -> tuple:

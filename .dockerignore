@@ -1,6 +1,7 @@
 # ingores everything
 *
 
-# except the app folder and the requirements
+# except the app folder, src folder and the requirements
 !app/
+!src/
 !app_requirements.txt

@@ -5,6 +5,13 @@ from utility import *
 
 
 class SetsDivision:
+    '''
+    Manages the division of a dataset into training, validation, and test sets.
+    This class allows adding clusters of images to the train, validation, 
+    and test sets while respecting predefined lengths. It also supports 
+    adding augmented images to the same set as their source images to 
+    prevent contamination between sets.
+    '''
     def __init__(self, train_len: int, val_len: int, test_len: int):
         '''
         Constructor for the SetsDivision class.

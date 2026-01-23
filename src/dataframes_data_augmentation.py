@@ -1,5 +1,7 @@
 import os
 import glob
+from functools import wraps
+import inspect
 import random
 import math
 import numpy as np
@@ -15,6 +17,39 @@ from utility import *
 
 # TRANSFORMATIONS
 
+# constants used by the transformations functions
+RGB_SHIFT = 10
+HUE_SHIFT = (-10.0, 10.0)
+VAL_SHIFT = (-10.0, 10.0)
+
+
+def add_saturation_param(func):
+    '''
+    Decorator that handles the increase_saturation parameters
+    and generates the saturation level accordingly
+    '''
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        sig = inspect.signature(func)
+        bound_args = sig.bind(*args, **kwargs)
+        bound_args.apply_defaults()
+        
+        increase_saturation = bound_args.arguments.get("increase_saturation", False)
+        
+        if increase_saturation:
+            saturation = (10.0, 20.0)
+        else:
+            saturation = (-10.0, 10.0)
+        
+        # Add saturation to kwargs (or bound_args)
+        kwargs["saturation"] = saturation
+        
+        return func(*args, **kwargs)
+    
+    return wrapper
+
+
+@add_saturation_param
 def get_ring_transformation(
         affine_scale: float,
         x_trasl: int,
@@ -22,7 +57,8 @@ def get_ring_transformation(
         angle: float,
         new_width: int,
         new_height: int,
-        increase_saturation: bool
+        increase_saturation: bool,
+        saturation: tuple=None,
     ) -> A.Compose:
     '''
     Calculates the transformation for the ring data augmentation, with the parameters for an image.
@@ -35,19 +71,11 @@ def get_ring_transformation(
     new_width (int): The new width after resizing
     new_height (int): The new height after resizing
     increase_saturation (bool): Whether the transformation has to increase the saturation or not
+    saturation (tuple): The level of saturation the tranformation choose from
 
     Returns:
     A.Compose: The calculated transformation
     '''
-    if increase_saturation:
-        saturation = (10.0, 20.0) 
-    else:
-        saturation = (-10.0, 10.0)
-    
-    RGB_SHIFT = 10
-    HUE_SHIFT = (-10.0, 10.0)
-    VAL_SHIFT = (-10.0, 10.0)
-    
     transform = A.Compose(
                 [
                     A.Affine(
@@ -82,35 +110,35 @@ def get_ring_transformation(
     return transform
 
 
+@add_saturation_param
 def get_rotate_transformation(
         angle: float,
-        increase_saturation: bool,
         new_width: int,
         new_height: int,
         x_min: int,
         y_min: int,
         x_max: int,
-        y_max: int
+        y_max: int,
+        increase_saturation: bool,
+        saturation: tuple=None,
     ) -> A.Compose:
     '''
     Calculates the transformation for the rotate data augmentation, with the parameters for an image.
 
     Parameters:
     angle (float): The angle to apply
+    new_width (int): The new width after resizing
+    new_height (int): The new height after resizing
+    x_min (int): The x-coordinate of the top-left corner of the crop rectangle.
+    y_min (int): The y-coordinate of the top-left corner of the crop rectangle.
+    x_max (int): The x-coordinate of the bottom-right corner of the crop rectangle.
+    y_max (int): The y-coordinate of the bottom-right corner of the crop rectangle.
     increase_saturation (bool): Whether the transformation has to increase the saturation or not
+    saturation (tuple): The level of saturation the tranformation choose from
 
     Returns:
     A.Compose: The calculated transformation
     '''
-    if increase_saturation:
-        saturation = (10.0, 20.0) 
-    else:
-        saturation = (-10.0, 10.0)
-    
-    RGB_SHIFT = 10
-    HUE_SHIFT = (-10.0, 10.0)
-    VAL_SHIFT = (-10.0, 10.0)
-    
     transform = A.Compose(
                 [
                     A.Crop(x_min=x_min, y_min=y_min, x_max=x_max, y_max=y_max, p=1.0),
@@ -119,7 +147,7 @@ def get_rotate_transformation(
                         translate_px={"x": 0, "y": 0},
                         rotate=(angle, angle),
                         shear=0,
-                        fit_output=True,  # to cause the actual image to rotate
+                        fit_output=True,
                         keep_ratio = True,
                         border_mode=cv2.BORDER_REFLECT,
                         p=1.0
@@ -147,36 +175,35 @@ def get_rotate_transformation(
     return transform
 
 
+@add_saturation_param
 def get_flip_transformation(
         angle: float,
-        increase_saturation: bool,
         new_width: int,
         new_height: int,
         x_min: int,
         y_min: int,
         x_max: int,
-        y_max: int
+        y_max: int,
+        increase_saturation: bool,
+        saturation: tuple=None,
     ):
     '''
     Calculates the transformation for the flip data augmentation, with the parameters for an image.
 
     Parameters:
+    angle (float): The angle to apply
     new_width (int): The new width after resizing
     new_height (int): The new height after resizing
+    x_min (int): The x-coordinate of the top-left corner of the crop rectangle.
+    y_min (int): The y-coordinate of the top-left corner of the crop rectangle.
+    x_max (int): The x-coordinate of the bottom-right corner of the crop rectangle.
+    y_max (int): The y-coordinate of the bottom-right corner of the crop rectangle.
     increase_saturation (bool): Whether the transformation has to increase the saturation or not
+    saturation (tuple): The level of saturation the tranformation choose from
 
     Returns:
     A.Compose: The calculated transformation
     '''
-    if increase_saturation:
-        saturation = (10.0, 20.0) 
-    else:
-        saturation = (-10.0, 10.0)
-    
-    RGB_SHIFT = 10
-    HUE_SHIFT = (-10.0, 10.0)
-    VAL_SHIFT = (-10.0, 10.0)
-    
     transform = A.Compose(
                 [   
                     A.Affine(
@@ -184,7 +211,7 @@ def get_flip_transformation(
                         translate_px={"x": 0, "y": 0},
                         rotate=(angle, angle),
                         shear=0,
-                        fit_output=True,  # to cause the actual image to rotate
+                        fit_output=True,
                         keep_ratio = True,
                         border_mode=cv2.BORDER_REFLECT,
                         p=1.0
@@ -213,10 +240,12 @@ def get_flip_transformation(
     return transform
 
 
+@add_saturation_param
 def get_square_transformation(
         min_side: int,
         new_side: int,
-        increase_saturation: bool
+        increase_saturation: bool,
+        saturation: tuple=None,
     ) -> A.Compose:
     '''
     Calculates the transformation for the square data augmentation, with the parameters for an image.
@@ -225,19 +254,11 @@ def get_square_transformation(
     min_side (int): The min between width and height of the image
     new_side (int): The new side dimension of the square, for resizing
     increase_saturation (bool): Whether the transformation has to increase the saturation or not
+    saturation (tuple): The level of saturation the tranformation choose from
 
     Returns:
     A.Compose: The calculated transformation
     '''
-    if increase_saturation:
-        saturation = (10.0, 20.0) 
-    else:
-        saturation = (-10.0, 10.0)
-    
-    RGB_SHIFT = 10
-    HUE_SHIFT = (-10.0, 10.0)
-    VAL_SHIFT = (-10.0, 10.0)
-    
     transform = A.Compose(
                 [
                     A.AtLeastOneBBoxRandomCrop(min_side, min_side),
@@ -269,8 +290,16 @@ def get_square_transformation(
 
 def ring_data_augmentation(n_per_square: int, ring_x_values: list, ring_y_values: list) -> None:
     '''
+    The centers heatmap graph is a 10x10 grid, formed by squares.
+    A ring is formed by squares and has the following shape for example:
+    # # # # #
+    #       #
+    #       #
+    #       #
+    # # # # #
+
     The ring data augmentation consists in traslating images such that the center of the foosball table
-    falls in a square of a specif ring, that is described by ring_x_values and ring_y_values.
+    falls in a square of a specfic ring, that is described by ring_x_values and ring_y_values.
 
     Parameters:
     n_per_square (int): Number of images that each square of the ring should have
@@ -280,6 +309,19 @@ def ring_data_augmentation(n_per_square: int, ring_x_values: list, ring_y_values
     Returns:
     None
     '''
+    # check parameters
+    if not isinstance(n_per_square, int) or n_per_square <= 0:
+        raise ValueError(f"n_per_square must be a positive integer")
+    if not isinstance(ring_x_values, list | np.ndarray):
+        raise ValueError("ring_x_values must be a list")
+    if not all(isinstance(x, (float, int, np.float32)) for x in ring_x_values):
+        raise ValueError("All elements in ring_x_values must be floats or ints")
+    if not isinstance(ring_y_values, list | np.ndarray):
+        raise ValueError("ring_y_values must be a list")
+    if not all(isinstance(y, (float, int, np.float32)) for y in ring_y_values):
+        raise ValueError("All elements in ring_y_values must be floats or ints")
+    if len(ring_x_values) != len(ring_y_values):
+        raise ValueError(f"ring_x_values and ring_y_values must have the same length")
 
     SQUARE_STEP = 0.07  # it's a constant for the centers heatmap with n=10
     
@@ -416,134 +458,13 @@ def ring_data_augmentation(n_per_square: int, ring_x_values: list, ring_y_values
             print(f"Square ({round(x, 2)}, {round(y, 2)}): unable to reach goal: selected {n_per_square_count} images out of {n_per_square}")    
 
 
-def rotate_data_augmentation(max_per_image: int, n_to_generate: int, angle_min: float, angle_max: float, offset_angle: float = 30.0) -> None:
-    '''
-    The rotate data augmentation consists in generating n_to_generate new image, by rotating a horizontal image,
-    with a theta between [angle_min, angle_max], by an angle around 90 or -90 degrees +- random.uniform(0.0, offset_angle),
-    such that we increase the number of vertical rectangle images and increase the images with a theta different from
-    angles in [angle_min, angle_max].
-
-    Parameters:
-    max_per_image (int): Max amount of images a single image can generate
-    n_to_generate (int): Number of images to generate
-    angle_min (float): The min angle an image should have, as theta, to be selected
-    angle_max (float): The max angle an image should have, as theta, to be selected
-    offset_angle (float): Offset from which a random value, between 0.0 and offset_angle, is added to the rotation
-
-    Returns:
-    None
-    '''
-
-    print("Applying rotate data augmentation...")
-
-    count = 0
-    for _ in range(max_per_image):  # to not risk of chosing the same images too many times
-        df_shuffled = df.sample(frac=1).reset_index(drop=True)
-
-        for i in range(len(df_shuffled)):
-            if angle_min <= df_shuffled.iloc[i]["theta"] <= angle_max and df_shuffled.iloc[i]["shape"] == "Horizontal Rectangle":
-                image_name = df_shuffled.iloc[i]["filename"]
-
-                # image loading
-                image_path = find_image_path(image_name, AUGMENTED_IMAGES_DATA_DIRECTORY)
-                if image_path == None:
-                    raise FileNotFoundError(f"Image {image_name} not found in {AUGMENTED_IMAGES_DATA_DIRECTORY}")
-                image = cv2.imread(image_path)
-                h, w = image.shape[:2]
-                # labels loading
-                label_path = find_label_path(image_name, AUGMENTED_LABELS_DIRECTORY)
-                if label_path == None:
-                    raise FileNotFoundError(f"Image {label_path} not found in {AUGMENTED_LABELS_DIRECTORY}")
-                bbox, keypoints = label_loading(label_path)
-                _, keypoints = denormalize(w, h, keypoints=keypoints)
-
-                # let's decide a saturation
-                increase_saturation = False
-                if df_shuffled.iloc[i]["saturation_mean"] > 75.0:
-                    probability = 0.8
-                    if random.random() < probability:
-                        # with a probability of 'probability', we increase the saturation
-                        increase_saturation = True
-
-                # let's decide a crop
-                # instead of implementening some limits that prevents cropping an image into a horizontal
-                # rectangle, we don't do that, because the amount of horizontal rectangles produced is limited
-                # Warning: by rotating the image of anf angle around 90 or -90, width becomes height and viceversa
-                crop_probability = 0.7
-                if random.random() < crop_probability:
-                    y_min = 0
-                    y_max = h - 1
-                    x_min, x_max, _, _ = crop_decision(w, h, keypoints[0:4])
-                else:
-                    x_min, y_min, x_max, y_max = 0, 0, w - 1, h - 1
-
-                # warning, with the crop we have a new dimension
-                w = y_max - y_min
-                h = x_max - x_min
-
-                # let's decide a resolution
-                # warning, with the crop we have a new dimension
-                new_width = w
-                new_height = h
-                if df_shuffled.iloc[i]["resolution"] == "High":
-                    probability = 0.4
-                    if random.random() < probability:
-                        # with a probability of 'probability', we decrease the resolution to Low
-                        ratio = w / h
-                        if max(w, h) == w:
-                            new_width = random.randrange(480, 640)
-                            new_height = round(new_width / ratio)
-                        else:
-                            new_height = random.randrange(480, 640)
-                            new_width = round(new_height * ratio)
-
-                
-                ANGLE_STEP = 15
-                rotations = np.linspace(random.uniform(0.0, offset_angle), 0, ANGLE_STEP).tolist()
-                np.random.shuffle(rotations)
-                for r in rotations:
-                    # we try to add an offset, to increase the flipped angle
-                    if abs(angle_min - 90.0) < abs(angle_max - 90.0):
-                        # rotate to the right
-                        angle = -90.0 + r
-                    else:
-                        # rotate to the left
-                        angle = 90.0 - r
-
-                    transform = get_rotate_transformation(angle, increase_saturation, new_width, new_height, x_min, y_min, x_max, y_max)
-
-                    augmentations = transform(
-                        image=image,
-                        bboxes=[bbox],  # we have only one bounding box per image
-                        keypoints=keypoints
-                    )
-                    new_height, new_width = augmentations["image"].shape[:2]
-                    
-                    # WARNING: if in the transformation uses remove_invisible=False, and cv2.BORDER_REFLECT
-                    # we can have a max of 9 * number of expected keypoints, because we have the reflection in every angle
-                    # and the keypoints that should have a visibility of 0, do not have it
-                    # we have to do some cleaning
-                    cleaned_bbox, cleaned_keypoints, result = clean_labels(new_width, new_height, augmentations["bboxes"], augmentations["keypoints"])
-
-                    # check the result of the cleaning
-                    if not result:
-                        # there are some problems with the kypoints or bouding boxes
-                        if r == 0.0:
-                            # we even tried with 0.0, it means there is not a valid angle to apply
-                            print(f"WARNING: unable to apply data augmentation for {image_name}")
-                        continue
-
-                    if save_augmented_data(image_name, augmentations["image"], cleaned_bbox[0], cleaned_keypoints):
-                        count += 1
-                        if count >= n_to_generate:
-                            print(f"{count} images generated")
-                            return
-                        break
-
-    print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
-
-
-def theta_data_augmentation(max_per_image: int, n_to_generate: int, angle_interval: tuple[float, float], desired_angle: float, angle_offset: float = 10.0) -> None:
+def theta_data_augmentation(
+        max_per_image: int,
+        n_to_generate: int,
+        angle_interval: tuple[float, float],
+        desired_angle: float, 
+        angle_offset: float = 10.0
+    ) -> None:
     '''
     The theta data augmentations consists in generating n_to_generate new images by taking images in a certain angle_interval,
     and applying a rotation such that the resulting theta is around desired_angle plus a random value, that is between -angle_offset
@@ -559,6 +480,21 @@ def theta_data_augmentation(max_per_image: int, n_to_generate: int, angle_interv
     Returns:
     None
     '''
+    # check parameters
+    if not isinstance(max_per_image, int) or max_per_image <= 0:
+        raise ValueError(f"max_per_image must be a positive integer")
+    if not isinstance(n_to_generate, int) or n_to_generate <= 0:
+        raise ValueError(f"n_to_generate must be a positive integer")
+    if not isinstance(angle_interval, tuple):
+        raise ValueError(f"angle_interval must be a tuple")
+    if len(angle_interval) != 2:
+        raise ValueError(f"angle_interval must have exactly 2 elements")
+    if not all(isinstance(a, (float, int)) for a in angle_interval):
+        raise ValueError("Both elements of angle_interval must be float or int")
+    if not isinstance(desired_angle, float):
+        raise TypeError(f"angle_max must be a float")
+    if not isinstance(angle_offset, float):
+        raise TypeError(f"offset_angle must be a float")
 
     print("Applying theta data augmentation...")
 
@@ -630,7 +566,7 @@ def theta_data_augmentation(max_per_image: int, n_to_generate: int, angle_interv
                 ANGLE_STEP = 15
                 rotations = np.linspace(rotation, 0.0, ANGLE_STEP).tolist()
                 for r in rotations:
-                    transform = get_rotate_transformation(r, increase_saturation, new_width, new_height, x_min, y_min, x_max, y_max)
+                    transform = get_rotate_transformation(r, new_width, new_height, x_min, y_min, x_max, y_max, increase_saturation)
                     
                     augmentations = transform(
                         image=image,
@@ -662,7 +598,12 @@ def theta_data_augmentation(max_per_image: int, n_to_generate: int, angle_interv
     print(f"Unable to generate {n_to_generate}: generated {count}/{n_to_generate}")
 
 
-def flip_data_augmentation(max_per_image: int, n_to_generate: int, angle_interval: tuple[float, float], angle_offset: float = 10.0) -> None:
+def flip_data_augmentation(
+        max_per_image: int,
+        n_to_generate: int,
+        angle_interval: tuple[float, float],
+        angle_offset: float = 10.0
+    ) -> None:
     '''
     The flip data augmentation consists in doing a horizontal flip for all the images with a theta in the interval
     angle_interval.
@@ -676,7 +617,20 @@ def flip_data_augmentation(max_per_image: int, n_to_generate: int, angle_interva
     Returns:
     None
     '''
-
+    # check parameters
+    if not isinstance(max_per_image, int) or max_per_image <= 0:
+        raise ValueError(f"max_per_image must be a positive integer")
+    if not isinstance(n_to_generate, int) or n_to_generate <= 0:
+        raise ValueError(f"n_to_generate must be a positive integer")
+    if not isinstance(angle_interval, tuple):
+        raise ValueError(f"angle_interval must be a tuple")
+    if len(angle_interval) != 2:
+        raise ValueError(f"angle_interval must have exactly 2 elements")
+    if not all(isinstance(a, (float, int)) for a in angle_interval):
+        raise ValueError("Both elements of angle_interval must be float or int")
+    if not isinstance(angle_offset, float):
+        raise TypeError(f"offset_angle must be a float")
+    
     print("Applying flip data augmentation")
 
     count = 0
@@ -754,7 +708,7 @@ def flip_data_augmentation(max_per_image: int, n_to_generate: int, angle_interva
                 rotations = rotations.tolist()
                 
                 for r in rotations:
-                    transform = get_flip_transformation(r, increase_saturation, new_width, new_height, x_min, y_min, x_max, y_max)
+                    transform = get_flip_transformation(r, new_width, new_height, x_min, y_min, x_max, y_max, increase_saturation)
                             
                     augmentations = transform(
                         image=image,
@@ -799,6 +753,15 @@ def square_data_augmentation(max_per_image: int, n_to_generate: int, original_sh
     Returns:
     None
     '''
+    # check parameters
+    if not isinstance(max_per_image, int) or max_per_image <= 0:
+        raise ValueError(f"max_per_image must be a positive integer")
+    if not isinstance(n_to_generate, int) or n_to_generate <= 0:
+        raise ValueError(f"n_to_generate must be a positive integer")
+    if original_shape not in ["Horizontal Rectangle", "Vertical Rectangle"]:
+        raise ValueError(
+            f"original_shape must be either 'Horizontal Rectangle' or 'Vertical Rectangle', "
+        )
 
     print("Applying square data augmentation...")
 
@@ -881,7 +844,7 @@ def square_data_augmentation(max_per_image: int, n_to_generate: int, original_sh
 def delete_too_augmented_images(index_threshold: int) -> None:
     '''
     All augmented images have a name in the form:
-    prefix_number_name of the original image.extension.
+    "prefix_number_name of the original image.extension."
     This function deletes all augmented images that have a number
     above index_threshold in their name.
 
@@ -893,6 +856,10 @@ def delete_too_augmented_images(index_threshold: int) -> None:
     Returns:
     None
     '''
+    # check parameter
+    if not isinstance(index_threshold, int) or index_threshold <= 0:
+        raise ValueError(f"index_threshold must be a positive integer")
+    
     aug_image_form = get_augmented_image_name("").split("_")
 
     images = glob.glob(os.path.join(AUGMENTED_IMAGES_DATA_DIRECTORY, f"{aug_image_form[0]}_*_*{aug_image_form[2]}"))

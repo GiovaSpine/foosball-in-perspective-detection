@@ -1,37 +1,19 @@
-
+import os
+import sys
 import numpy as np
 
+# to use the utility functions
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
+
+from utility import *
+
+
 # TYPE CHECKING
-
-def check_keypoints(keypoints: list):
-    '''
-    Checks if keypoint is a list of 8 elements that are lists of 2 floats.
-
-    Parameter:
-    keypoints (list): The list of keypoints to check
-
-    Returns:
-    bool: Wheter the keypoints respect the described type
-    '''
-    # keypoints has to be a list
-    if not isinstance(keypoints, list):
-        raise TypeError(f"keypoints needs to be a list: {type(keypoints)} given")
-    # keypoints has to have 8 elements
-    if len(keypoints) != 8:
-        raise ValueError(f"keypoints needs to have 8 elements: {len(keypoints)} given")
-    # every element has to be a list or tuple of 2 floats or ints
-    for kp in keypoints:
-        if not isinstance(kp, (list, tuple)):
-            raise TypeError(f"keypoints needs to contain lists: {type(kp)} given")
-        if len(kp) != 2:
-            raise ValueError(f"the lists or tuples of keypoints need to have 2 elements: {len(kp)} given")
-        if not all(isinstance(x, (float, int)) for x in kp):
-            raise ValueError(f"the lists or tuples of keypoints need to have 2 floats or ints")
-
 
 def check_quadrilateral(quadrilateral: list) -> None:
     '''
     Checks if quadrilateral is a list of 4 elements that are lists of 2 floats.
+    Raises error if the condition is not met.
 
     Parameter:
     quadrilateral (list): The quadrilateral to check
@@ -53,42 +35,6 @@ def check_quadrilateral(quadrilateral: list) -> None:
             raise ValueError(f"the lists or tuples of quadrilateral need to have 2 elements: {len(p)} given")
         if not all(isinstance(x, (float, int, np.floating, np.integer)) for x in p):
             raise ValueError(f"the lists or tuples of quadrilateral need to have 2 floats or ints")
-
-
-def check_point(point: list | tuple | np.ndarray) -> None:
-    '''
-    Checks if point is a list of 2 floats.
-
-    Parameter:
-    point (list or tuple): The point to check
-
-    Returns:
-    None
-    '''
-    if not isinstance(point, (list, tuple, np.ndarray)):
-        raise TypeError(f"point needs to be a list or tuple: {type(point)} given")
-    if len(point) != 2:
-        raise ValueError(f"point needs to contain 2 elements: {len(point)} given")
-    if not all(isinstance(x, (float, int, np.floating, np.integer)) for x in point):
-        raise TypeError(f"point needs to contain 2 floats or ints")
-
-
-def check_line(line: list | tuple) -> None:
-    '''
-    Checks if line is a list of 2 lists that each contain 2 floats.
-
-    Parameter:
-    line (list or tuple): The line in the form [p1, p2] or (p1, p2) where p1 and p2 are bidimensional points
-
-    Returns:
-    None
-    '''
-    if not isinstance(line, (list, tuple)):
-        raise TypeError("line needs to be a list or tuple")
-    if len(line) != 2:
-        raise ValueError("line needs to contain 2 elements")
-    check_point(line[0])
-    check_point(line[1])
 
 # ---------------------------------------------------------
 
@@ -192,38 +138,6 @@ def is_point_in_quadrilateral(point: list | tuple, quadrilateral: list) -> bool:
         return False
 
     return all(s == signs[0] for s in signs)
-
-
-def calculate_intersection(line1: tuple, line2: tuple) -> tuple:
-    '''
-    Calculate the intersection of 2 lines, each rapresented as 2 points in 2d.
-
-    Parameters:
-    line1 (tuple): The first line as (x1, y1), (x2, y2)
-    line2 (tuple): The second line as (x1, y1), (x2, y2)
-
-    Returns:
-    tuple: The point of intersection if it exists
-    '''
-
-    # check parameters
-    check_line(line1)
-    check_line(line2)
-
-    x_diff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-    y_diff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
-
-    def determinant(a, b):
-        return a[0] * b[1] - a[1] * b[0]
-
-    divisor = determinant(x_diff, y_diff)
-    if divisor == 0:
-        raise ValueError(f"The lines do not intersect. {line1}, {line2}")
-
-    d = (determinant(*line1), determinant(*line2))
-    x = determinant(d, x_diff) / divisor
-    y = determinant(d, y_diff) / divisor
-    return x, y
 
 # ---------------------------------------------------------
 

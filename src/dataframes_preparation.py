@@ -10,6 +10,22 @@ import pandas as pd
 from config import *
 from utility import *
 
+
+def check_paths_to_look(paths_to_look: tuple[str]) -> None:
+    '''
+    Checks if all paths provided in paths_to_look exists.
+    Raise an error if not
+
+    Parameters:
+    paths_to_look (str): One or more path from where to load the images
+    '''
+    if not isinstance(paths_to_look, tuple):
+        raise TypeError("pahts_to_look has to be a tuple")
+    invalid_paths = [p for p in paths_to_look if not os.path.exists(p)]
+    if invalid_paths:
+        raise ValueError(f"The following paths do not exist: {', '.join(invalid_paths)}")
+
+
 def load_labels_dataframe(*paths_to_look: str) -> pd.DataFrame:
     '''
     Load the main dataframe that will contain for every image the following informations:
@@ -20,11 +36,13 @@ def load_labels_dataframe(*paths_to_look: str) -> pd.DataFrame:
     - highest_keypoint: the id of the keypoint that is the highest on the y axis (lowest high in the image)
 
     Parameters:
-    paths_to_look: One or more path from where to load the images
+    paths_to_look (str): One or more path from where to load the images
 
     Returns:
     DataFrame: The calculated dataframe
     '''
+    check_paths_to_look(paths_to_look)
+
     data = []
     for path in paths_to_look:
         for file in os.listdir(path):
@@ -108,7 +126,7 @@ def load_labels_dataframe(*paths_to_look: str) -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
-def load_images_dataframe(*paths_to_look) -> pd.DataFrame:
+def load_images_dataframe(*paths_to_look: str) -> pd.DataFrame:
     '''
     Load the main dataframe that will contain for every image the following informations:
     - ratio = width/height
@@ -118,11 +136,13 @@ def load_images_dataframe(*paths_to_look) -> pd.DataFrame:
     - saturation_mean: The mean of the saturation of the image, when converted to HSV
 
     Parameters:
-    paths_to_look: One or more path from where to load the images
+    paths_to_look (str): One or more path from where to load the images
 
     Returns:
     DataFrame: The calculated dataframe
     '''
+    check_paths_to_look(paths_to_look)
+
     data = []
     for path in paths_to_look:
         for file in os.listdir(path):
@@ -168,7 +188,7 @@ def load_images_dataframe(*paths_to_look) -> pd.DataFrame:
 
 # =============================================================================
 
-# executbale from the terminal as
+# executable from the terminal as
 # > python dataframes_preparation.py {IMAGES,LABELS} {DEFAULT,ADDED,AUGMENTED}
 
 def save_dataframe(df_to_generate: str, df_version: str) -> None:

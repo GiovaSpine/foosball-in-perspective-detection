@@ -28,11 +28,11 @@ In an ideal scenario, where we have a fixed top-down camera with some zoom to re
 
 But what if:
 - The camera is not fixed, or the table moves throughout the match ?
-- What if the camera has no zoom and does not capture the table from above ?
+- The camera has no zoom and does not capture the table from above ?
 
-The project goal is to implement a system that allows to translate positions from image coordinates (𝑟, 𝑐) to table coordinates (𝑥, 𝑦) in non-ideal scenarios.
+The project goal is to implement a system that allows to translate positions from image coordinates (𝑟, 𝑐) to table coordinates (𝑥, 𝑦) in these non-ideal scenarios.
 
-To do this the project is divided into two main parts:
+To do this, the project is divided into two main parts:
 - An AI vision model to detect the vertices of the table as keypoints.
 - A translation algorithm to translate positions using those vertices.
 
@@ -128,6 +128,12 @@ Following these guidelines should help users obtain the best possible prediction
 This project provides a RESTful API to interact with the Foosball system.  
 Running the Docker container allows you to both **test the system** and
 **access the API endpoints** for integration or experimentation.
+
+**Before building the Docker container:**
+If you have sample images available, copy them into the following folder:
+```text
+app/static/images/samples/
+```
 
 To build the image use this command when you are in the directory where the Dockerfile is located:
 
@@ -235,7 +241,7 @@ Once the container is running, open your browser and go to [http://127.0.0.1:500
 
     Requires the keypoints in pixel coordinates.
 
-    The output is an array of 8 lines, where a line is [[x1, y1], [x2, y2]] in image coordinates.
+    The output is an array of 8 lines, where a single line is [[x1, y1], [x2, y2]] in image coordinates.
 
 - **JSON body:**
 ```json
