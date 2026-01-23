@@ -8,34 +8,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../s
 from utility import *
 
 
-# TYPE CHECKING
-
-def check_quadrilateral(quadrilateral: list) -> None:
-    '''
-    Checks if quadrilateral is a list of 4 elements that are lists of 2 floats.
-    Raises error if the condition is not met.
-
-    Parameter:
-    quadrilateral (list): The quadrilateral to check
-
-    Returns:
-    None
-    '''
-    # quadrilateral has to be a list
-    if not isinstance(quadrilateral, list):
-        raise TypeError(f"quadrilateral needs to be a list: {type(quadrilateral)} given")
-    # quadrilateral has to have 4 elements
-    if len(quadrilateral) != 4:
-        raise ValueError(f"quadrilateral needs to have 4 elements: {len(quadrilateral)} given")
-    # every element has to be a list or tuple of 2 floats or ints
-    for p in quadrilateral:
-        if not isinstance(p, (list, tuple)):
-            raise TypeError(f"quadrilateral needs to contain lists: {type(p)} given")
-        if len(p) != 2:
-            raise ValueError(f"the lists or tuples of quadrilateral need to have 2 elements: {len(p)} given")
-        if not all(isinstance(x, (float, int, np.floating, np.integer)) for x in p):
-            raise ValueError(f"the lists or tuples of quadrilateral need to have 2 floats or ints")
-
 # ---------------------------------------------------------
 
 # ERRORS
@@ -84,7 +56,7 @@ def is_convex_quadrilateral(quadrilateral: list) -> bool:
     bool: Wheter the quadrilateral is convex or not
     '''
     # check parameters
-    check_quadrilateral(quadrilateral)
+    check_keypoints(quadrilateral, n_elements=4)
 
     pts = np.asarray(quadrilateral)
 
@@ -118,7 +90,7 @@ def is_point_in_quadrilateral(point: list | tuple, quadrilateral: list) -> bool:
 
     # check parameters
     check_point(point)
-    check_quadrilateral(quadrilateral)
+    check_keypoints(quadrilateral, n_elements=4)
 
     p = np.array(point)
     q = np.array(quadrilateral)
@@ -167,7 +139,7 @@ def translate_point(point: list | tuple | np.ndarray, lower_keypoints: list, thr
     '''
     # check parameters
     check_point(point)
-    check_quadrilateral(lower_keypoints)
+    check_keypoints(lower_keypoints, n_elements=4)
     if not isinstance(threshold, float):
         raise TypeError("threshold has to be a float")
     if threshold <= 0.0:

@@ -312,11 +312,11 @@ def ring_data_augmentation(n_per_square: int, ring_x_values: list, ring_y_values
     # check parameters
     if not isinstance(n_per_square, int) or n_per_square <= 0:
         raise ValueError(f"n_per_square must be a positive integer")
-    if not isinstance(ring_x_values, list | np.ndarray):
+    if not isinstance(ring_x_values, (list, np.ndarray)):
         raise ValueError("ring_x_values must be a list")
     if not all(isinstance(x, (float, int, np.float32)) for x in ring_x_values):
         raise ValueError("All elements in ring_x_values must be floats or ints")
-    if not isinstance(ring_y_values, list | np.ndarray):
+    if not isinstance(ring_y_values, (list, np.ndarray)):
         raise ValueError("ring_y_values must be a list")
     if not all(isinstance(y, (float, int, np.float32)) for y in ring_y_values):
         raise ValueError("All elements in ring_y_values must be floats or ints")

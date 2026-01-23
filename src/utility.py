@@ -84,32 +84,37 @@ def load_all_clustering_label(clustering_path: str) -> dict:
 
 # ERROR CHECKING
 
-
-def check_keypoints(keypoints: list) -> None:
+def check_keypoints(keypoints: list, n_elements: int=8) -> None:
     '''
-    Checks if keypoint is a list of 8 elements that are lists of 2 floats.
+    Checks if keypoint is a list of "n_elements" elements
+    that are lists of 2 or 3 floats or ints.
+    (2 numbers if we have only x, y and 3 number if there is also the visibity)
     Raises error if the condition is not met.
 
     Parameter:
     keypoints (list): The list of keypoints to check
+    n_elements (int): The amount of elements keypoint should have.
+                        Can only be 4 or 8.
 
     Returns:
     None
     '''
-    # keypoints has to be a list
-    if not isinstance(keypoints, list):
+    if not isinstance(n_elements, int) or (n_elements != 8 and n_elements != 4):
+        raise ValueError("n_elements needs to be an integer equal to 4 or 8")
+    
+    if not isinstance(keypoints, (list, tuple, np.ndarray)):
         raise TypeError(f"keypoints needs to be a list: {type(keypoints)} given")
     # keypoints has to have 8 elements
-    if len(keypoints) != 8:
-        raise ValueError(f"keypoints needs to have 8 elements: {len(keypoints)} given")
+    if len(keypoints) != n_elements:
+        raise ValueError(f"keypoints needs to have {n_elements} elements: {len(keypoints)} given")
     # every element has to be a list or tuple of 2 floats or ints
     for kp in keypoints:
-        if not isinstance(kp, (list, tuple)):
+        if not isinstance(kp, (list, tuple, np.ndarray)):
             raise TypeError(f"keypoints needs to contain lists: {type(kp)} given")
-        if len(kp) != 2:
-            raise ValueError(f"the lists or tuples of keypoints need to have 2 elements: {len(kp)} given")
+        if len(kp) != 2 and len(kp) != 3:
+            raise ValueError(f"the lists or tuples of keypoints need to have 2 or 3 elements: {len(kp)} given")
         if not all(isinstance(x, (float, int)) for x in kp):
-            raise ValueError(f"the lists or tuples of keypoints need to have 2 floats or ints")
+            raise ValueError(f"the lists or tuples of keypoints need to have 2 or 3 floats or ints")
 
 
 def check_bounding_box(bounding_box: list) -> None:
@@ -352,18 +357,30 @@ def save_augmented_data(
     image_name (str): The name of the image without extension
     augmented_image (np.ndarray): The augmented image produced by albumentations
     augmented_bbox (list): The new bbox
-    augmented_keypoints (list): The new kepoints
+    augmented_kps (list): The new kepoints
     horizontal_flip (bool): Wether in the tranformation there was the HorizontalFlip
 
     Returns:
     bool: True if it's able to save the image and labels, False otherwise
     '''
+    # check parameters
+    if not isinstance(image_name, str) or not image_name:
+        raise TypeError("image_name must be a non-empty string")
+    if not isinstance(augmented_image, np.ndarray):
+        raise TypeError("augmented_image must be a numpy array")
+    check_bounding_box(augmented_bbox)
+    check_keypoints(augmented_kps)
+    if not isinstance(horizontal_flip, bool):
+        raise TypeError("horizontal_flip must be a boolean")
+
     # filenames and paths
     augmented_image_name = get_augmented_image_name(image_name)
     augmented_labels_name = os.path.splitext(augmented_image_name)[0] + LABELS_EXTENSION
 
-    augmented_labels_path = os.path.join(AUGMENTED_LABELS_DIRECTORY, augmented_labels_name)
-    augmented_image_path = os.path.join(AUGMENTED_IMAGES_DATA_DIRECTORY, augmented_image_name)
+    #augmented_labels_path = os.path.join(AUGMENTED_LABELS_DIRECTORY, augmented_labels_name)
+    #augmented_image_path = os.path.join(AUGMENTED_IMAGES_DATA_DIRECTORY, augmented_image_name)
+    augmented_labels_path = os.path.join("./results/test/labels", augmented_labels_name)
+    augmented_image_path = os.path.join("./results/test/images", augmented_image_name)
     
     # we have to make the label
     # WARNING: we have a rule: the highest keypoint (lowest y) has to be either the first keypoint or the second
@@ -442,7 +459,16 @@ def max_centered_scale(width: int, height: int, keypoints: list, margin_px: floa
     Returns:
     float: The calculated max scale
     '''
-    check_keypoints(keypoints)
+    # check parameters
+    if not isinstance(width, int) or width <= 0:
+        raise ValueError("width must be a positive integer")
+    if not isinstance(height, int) or height <= 0:
+        raise ValueError("height must be a positive integer")
+    check_keypoints(keypoints=keypoints, n_elements=4)
+    if not isinstance(margin_px, float) or margin_px < 0:
+        raise ValueError("margin_px must be a float >= 0")
+    if not isinstance(max_scale, float) or max_scale < 1.0:
+        raise ValueError("max_scale must be a float greater than 1")
 
     # coordinates extraction
     pts = []
@@ -509,6 +535,17 @@ def min_centered_scale(width: int, height: int, keypoints: list, margin_px: floa
     Returns:
     float: The calculated min scale
     '''
+    # check parameters
+    if not isinstance(width, int) or width <= 0:
+        raise ValueError("width must be a positive integer")
+    if not isinstance(height, int) or height <= 0:
+        raise ValueError("height must be a positive integer")
+    check_keypoints(keypoints=keypoints, n_elements=4)
+    if not isinstance(margin_px, float) or margin_px < 0:
+        raise ValueError("margin_px must be a float >= 0")
+    if not isinstance(min_scale, float) or min_scale <= 0 or min_scale > 1.0:
+        raise ValueError("min_scale must be a float between 0 and 1")
+    
     # scaling down means introducing some space
     # on width: (w - (w * scale)) / 2
     # on height: (h - (h * scale)) / 2
@@ -557,6 +594,17 @@ def find_max_traslation(width: int, height: int, keypoints: list, affine_scale: 
     Returns:
     tuple: The calculated max traslation in the form (max_trasl_left, max_trasl_right), (max_trasl_up, max_trasl_down)
     '''
+    # check parameters
+    if not isinstance(width, int) or width <= 0:
+        raise ValueError("width must be a positive integer")
+    if not isinstance(height, int) or height <= 0:
+        raise ValueError("height must be a positive integer")
+    check_keypoints(keypoints=keypoints, n_elements=4)
+    if not isinstance(affine_scale, float) or affine_scale <= 0:
+        raise ValueError("min_scale must be a float be greater than 0")
+    if not isinstance(margin_px, float) or margin_px < 0:
+        raise ValueError("margin_px must be a float >= 0")
+
     min_x = np.min(keypoints, axis=0)[0] # the most left x
     max_x = np.max(keypoints, axis=0)[0] # the most right x
     min_y = np.min(keypoints, axis=0)[1] # the highest y
@@ -620,6 +668,15 @@ def clean_labels(width: int, height: int, bboxes: list, keypoints: list) -> tupl
     tuple: The cleaned bboxes, keypoints and the result of the cleaning, because there might be more
            foosball tables in the image, or no one (result = false)
     '''
+    # check parameters
+    if not isinstance(width, int) or width <= 0:
+        raise ValueError("width must be a positive integer")
+    if not isinstance(height, int) or height <= 0:
+        raise ValueError("height must be a positive integer")
+    for bbox in bboxes:
+        check_bounding_box(bbox)
+    for i in range(0, len(keypoints), 8):
+        check_keypoints(keypoints[i:i+8])
 
     keypoint_sets = []
     valid_sets = []
@@ -743,6 +800,14 @@ def crop_decision(width: int, height: int, keypoints: list, offset: int = 5) -> 
     Returns:
     tuple: The calculated crop as x_min, x_max, y_min, y_max
     '''
+    # check parameters
+    if not isinstance(width, int) or width <= 0:
+        raise ValueError("width must be a positive integer")
+    if not isinstance(height, int) or height <= 0:
+        raise ValueError("height must be a positive integer")
+    check_keypoints(keypoints=keypoints, n_elements=4)
+    if not isinstance(offset, int) or offset <= 0:
+        raise ValueError("offset must be a positive integer")
 
     min_x_kp = round(np.min(keypoints, axis=0)[0]) # the most left x
     max_x_kp = round(np.max(keypoints, axis=0)[0]) # the most right x
